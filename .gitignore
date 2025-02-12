@@ -52,4 +52,7 @@ instance/
 
 # Logi
 *.log
-logs/ 
+logs/
+
+# Lokalne instrukcje
+GIT_INSTRUKCJE.md 
