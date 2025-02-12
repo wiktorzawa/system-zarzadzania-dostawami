@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}System Zarządzania Dostawami{% endblock %}
+
+{% block content %}
+<section class="py-16 bg-gradient-to-b from-gray-500 to-gray-900 dark:from-gray-900 dark:to-gray-700">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col items-center justify-center space-y-8 max-w-4xl mx-auto">
+            <h1 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-white md:text-5xl lg:text-6xl text-center font-display">
+                SYSTEM ZARZĄDZANIA DOSTAWAMI 
+            </h1>   
+
+            <p class="mb-6 text-lg font-bold text-gray-100 lg:text-xl sm:px-16 xl:px-48 text-center">
+                W zależności od roli użytkownika przejdź do odpowiedniego panelu. Wybierz panel logowania i kliknij zaloguj
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="py-8 bg-gray-50 dark:bg-gray-900">
+    <div class="flex items-center justify-center">
+        <div id="select-modal">
+            <div class="relative p-4 w-full max-w-md max-h-full">
+                <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-card transform hover:scale-[1.02] transition-all duration-400">
+                    <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-200 dark:border-gray-600">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white font-display">
+                            LOGOWANIE DO SYSTEMU
+                        </h3>
+                    </div>
+                    <div class="p-4 md:p-5">
+                        <form action="{{ url_for('login_admin') }}" method="GET" id="loginForm">
+                            <p class="text-gray-500 dark:text-gray-400 mb-4">Wybierz odpowiedni panel logowania:</p>
+                            <ul class="space-y-4 mb-4">
+                                <li>
+                                    <input type="radio" id="job-1" name="job" value="job-1" class="hidden" required />
+                                    <label for="job-1" class="option-label group inline-flex items-center justify-between w-full p-5 text-gray-900 bg-white border border-gray-200 rounded-lg cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-400 shadow-soft hover:shadow-nav hover:-translate-y-1">                           
+                                        <div class="block">
+                                            <div class="w-full text-lg font-semibold text-gray-900 dark:text-white">ADMINISTRATOR</div>
+                                            <div class="option-text w-full text-gray-500 dark:text-gray-400">Przejdź do logowania do panelu administratora</div>
+                                        </div>
+                                        <svg class="option-icon w-4 h-4 ms-3 rtl:rotate-180 text-gray-500 dark:text-gray-400 transition-transform duration-400 group-hover:rotate-[360deg]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/></svg>
+                                    </label>
+                                </li>
+                                <li>
+                                    <input type="radio" id="job-2" name="job" value="job-2" class="hidden">
+                                    <label for="job-2" class="option-label group inline-flex items-center justify-between w-full p-5 text-gray-900 bg-white border border-gray-200 rounded-lg cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-400 shadow-soft hover:shadow-nav hover:-translate-y-1">
+                                        <div class="block">
+                                            <div class="w-full text-lg font-semibold text-gray-900 dark:text-white">PRACOWNIK</div>
+                                            <div class="option-text w-full text-gray-500 dark:text-gray-400">Przejdź do logowania do panelu pracownika</div>
+                                        </div>
+                                        <svg class="option-icon w-4 h-4 ms-3 rtl:rotate-180 text-gray-500 dark:text-gray-400 transition-transform duration-400 group-hover:rotate-[360deg]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/></svg>
+                                    </label>
+                                </li>
+                                <li>
+                                    <input type="radio" id="job-3" name="job" value="job-3" class="hidden">
+                                    <label for="job-3" class="option-label group inline-flex items-center justify-between w-full p-5 text-gray-900 bg-white border border-gray-200 rounded-lg cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-400 shadow-soft hover:shadow-nav hover:-translate-y-1">
+                                        <div class="block">
+                                            <div class="w-full text-lg font-semibold text-gray-900 dark:text-white">DOSTAWCA</div>
+                                            <div class="option-text w-full text-gray-500 dark:text-gray-400">Przejdź do logowania do panelu dostawcy</div>
+                                        </div>
+                                        <svg class="option-icon w-4 h-4 ms-3 rtl:rotate-180 text-gray-500 dark:text-gray-400 transition-transform duration-400 group-hover:rotate-[360deg]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/></svg>
+                                    </label>
+                                </li>
+                            </ul>
+                            <button onclick="submitForm()" class="text-white w-full inline-flex justify-center bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 shadow-soft hover:shadow-nav transition-all duration-400 hover:-translate-y-1">
+                                ZALOGUJ
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </div>
+</section>
+
+<script>
+function submitForm() {
+    const form = document.getElementById('loginForm');
+    const selectedJob = document.querySelector('input[name="job"]:checked').value;
+    
+    if (selectedJob === 'job-1') {
+        form.action = "{{ url_for('login_admin') }}";
+    } else if (selectedJob === 'job-2') {
+        form.action = "{{ url_for('login_staff') }}";
+    } else if (selectedJob === 'job-3') {
+        form.action = "{{ url_for('login_supplier') }}";
+    }
+    
+    form.submit();
+}
+
+document.querySelectorAll('input[name="job"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('.option-label').forEach(label => {
+            label.className = 'option-label group inline-flex items-center justify-between w-full p-5 text-gray-900 bg-white border border-gray-200 rounded-lg cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-400 shadow-soft hover:shadow-nav hover:-translate-y-1';
+        });
+        
+        document.querySelectorAll('.option-text').forEach(text => {
+            text.className = 'option-text w-full text-gray-500 dark:text-gray-400';
+        });
+        
+        document.querySelectorAll('.option-icon').forEach(icon => {
+            icon.className = 'option-icon w-4 h-4 ms-3 rtl:rotate-180 text-gray-500 dark:text-gray-400 transition-transform duration-400 group-hover:rotate-[360deg]';
+        });
+
+        if (this.checked) {
+            const label = document.querySelector(`label[for="${this.id}"]`);
+            const text = label.querySelector('.option-text');
+            const icon = label.querySelector('.option-icon');
+            const title = label.querySelector('.text-lg');
+            
+            label.className = 'option-label group inline-flex items-center justify-between w-full p-5 border rounded-lg cursor-pointer transition-all duration-400 bg-blue-50 dark:bg-blue-600 border-blue-200 dark:border-blue-500 shadow-nav scale-105';
+            
+            text.className = 'option-text w-full text-blue-900 dark:text-white';
+            
+            icon.className = 'option-icon w-4 h-4 ms-3 rtl:rotate-180 text-blue-900 dark:text-white transition-transform duration-400 group-hover:rotate-[360deg]';
+            
+            title.className = 'w-full text-lg font-semibold text-blue-900 dark:text-white';
+        }
+    });
+});
+</script>
+{% endblock %}
