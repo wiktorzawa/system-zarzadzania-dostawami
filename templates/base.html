@@ -44,7 +44,7 @@
     {% block content %}{% endblock %}
 
     <!-- Flowbite -->
-    <script src="../node_modules/flowbite/dist/flowbite.js"></script>
+    <script src="{{ url_for('static', filename='js/vendor/flowbite.min.js') }}"></script>
 
     <!-- Nasze skrypty -->
     <script src="{{ url_for('static', filename='js/base_elements/dark_mode.js') }}"></script>
