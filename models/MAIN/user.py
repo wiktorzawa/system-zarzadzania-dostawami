@@ -1,14 +1,14 @@
 from datetime import datetime
 import bcrypt
 from werkzeug.security import generate_password_hash, check_password_hash
-from .. import db
-from ..supplier import Supplier
-from ..staff import Staff
+from . import db
+from ..supplier.supplier import Supplier
+from ..staff.staff import Staff
 
 class User(db.Model):
-    __tablename__ = 'login_data'
+    __tablename__ = 'login_auth_data'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(20), primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.Enum('admin', 'staff', 'supplier'), nullable=False)
@@ -28,15 +28,22 @@ class User(db.Model):
     def verify_password(self, password):
         """Weryfikuje hasło z uwzględnieniem różnych formatów haszowania"""
         try:
+            print(f"Weryfikacja hasła dla użytkownika {self.email}")  # Debug
+            print(f"Format hasła w bazie: {self.password_hash[:50]}...")  # Debug
+            
             if self.password_hash.startswith('$2'):
+                print("Używam weryfikacji bcrypt")  # Debug
                 # Format bcrypt
                 return bcrypt.checkpw(password.encode('utf-8'), 
                                     self.password_hash.encode('utf-8'))
             else:
+                print("Używam standardowej weryfikacji Flask")  # Debug
                 # Standardowa weryfikacja
-                return check_password_hash(self.password_hash, password)
+                result = check_password_hash(self.password_hash, password)
+                print(f"Wynik weryfikacji: {result}")  # Debug
+                return result
         except Exception as e:
-            print(f"Błąd weryfikacji hasła: {e}")
+            print(f"Błąd weryfikacji hasła: {e}")  # Debug
             return False
 
     def get_profile(self):

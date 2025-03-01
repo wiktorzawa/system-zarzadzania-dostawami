@@ -17,7 +17,7 @@
                 <p class="text-sm font-light text-gray-500 dark:text-gray-400">
                     Zaloguj się do panelu administratora
                 </p>
-                <form class="mt-4 space-y-6 sm:mt-6" action="{{ url_for('login_admin') }}" method="POST">
+                <form class="mt-4 space-y-6 sm:mt-6" action="{{ url_for('admin.admin_login') }}" method="POST">
                     <input type="hidden" name="user_type" value="job-1">
                     <div class="grid gap-6 sm:grid-cols-2">
                         <div>

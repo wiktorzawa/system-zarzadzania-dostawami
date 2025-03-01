@@ -1,11 +1,11 @@
 from datetime import datetime
-from .. import db
+from ..MAIN import db
 
 class Supplier(db.Model):
     __tablename__ = 'suppliers'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('login_data.id'), nullable=False)
+    user_id = db.Column(db.String(20), db.ForeignKey('login_auth_data.id'), nullable=False)
     company_name = db.Column(db.String(255), nullable=False)
     nip = db.Column(db.String(10), unique=True, nullable=False)
     address = db.Column(db.String(255), nullable=False)

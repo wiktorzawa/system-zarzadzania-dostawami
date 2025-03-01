@@ -28,7 +28,7 @@
                         </h3>
                     </div>
                     <div class="p-4 md:p-5">
-                        <form action="{{ url_for('login_admin') }}" method="GET" id="loginForm">
+                        <form action="{{ url_for('admin.admin_login') }}" method="GET" id="loginForm">
                             <p class="text-gray-500 dark:text-gray-400 mb-4">Wybierz odpowiedni panel logowania:</p>
                             <ul class="space-y-4 mb-4">
                                 <li>
@@ -81,11 +81,11 @@ function submitForm() {
     const selectedJob = document.querySelector('input[name="job"]:checked').value;
     
     if (selectedJob === 'job-1') {
-        form.action = "{{ url_for('login_admin') }}";
+        form.action = "{{ url_for('admin.admin_login') }}";
     } else if (selectedJob === 'job-2') {
-        form.action = "{{ url_for('login_staff') }}";
+        form.action = "{{ url_for('staff.staff_login') }}";
     } else if (selectedJob === 'job-3') {
-        form.action = "{{ url_for('login_supplier') }}";
+        form.action = "{{ url_for('supplier.supplier_login') }}";
     }
     
     form.submit();

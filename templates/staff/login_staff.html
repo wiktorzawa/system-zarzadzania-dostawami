@@ -17,7 +17,7 @@
                 <p class="text-sm font-light text-gray-500 dark:text-gray-400">
                     Zaloguj się do panelu pracownika
                 </p>
-                <form class="mt-4 space-y-6 sm:mt-6" action="{{ url_for('login_staff') }}" method="POST">
+                <form class="mt-4 space-y-6 sm:mt-6" action="{{ url_for('staff.staff_login') }}" method="POST">
                     <div class="grid gap-6 sm:grid-cols-2">
                         <div>
                             <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>

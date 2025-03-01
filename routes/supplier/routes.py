@@ -1,32 +1,39 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from ...models.MAIN import Auth
+from models.MAIN import Auth
 
 supplier_bp = Blueprint('supplier', __name__)
 
 @supplier_bp.route('/login', methods=['GET', 'POST'])
-def login():
+def supplier_login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         
+        print(f"Próba logowania - email: {email}")  # Debug
+        
         success, user = Auth.login_user(email, password, role='supplier')
+        
+        print(f"Wynik logowania - sukces: {success}, użytkownik: {user}")  # Debug
+        
         if success:
-            return redirect(url_for('supplier.dashboard'))
+            print(f"Przekierowuję na dashboard")  # Debug
+            return redirect(url_for('supplier.supplier_dashboard'))
         else:
+            print(f"Błąd logowania")  # Debug
             flash('Nieprawidłowy email lub hasło', 'error')
             
     return render_template('supplier/login_supplier.html')
 
 @supplier_bp.route('/dashboard')
-def dashboard():
+def supplier_dashboard():
     if not Auth.is_authenticated() or not Auth.has_role('supplier'):
-        return redirect(url_for('supplier.login'))
+        return redirect(url_for('supplier.supplier_login'))
     return render_template('supplier/supplier_dashboard.html')
 
 @supplier_bp.route('/nowa_dostawa', methods=['GET', 'POST'])
-def nowa_dostawa():
+def supplier_nowa_dostawa():
     if not Auth.is_authenticated() or not Auth.has_role('supplier'):
-        return redirect(url_for('supplier.login'))
+        return redirect(url_for('supplier.supplier_login'))
     
     if request.method == 'POST':
         # Pobieranie danych z formularza
@@ -41,30 +48,30 @@ def nowa_dostawa():
         # TODO: Dodać zapis do bazy danych
         
         flash('Dostawa została pomyślnie zarejestrowana', 'success')
-        return redirect(url_for('supplier.dashboard'))
+        return redirect(url_for('supplier.supplier_dashboard'))
         
     return render_template('supplier/supplier_nowa_dostawa.html')
 
 @supplier_bp.route('/dostawy_weryfikacja')
-def dostawy_weryfikacja():
+def supplier_dostawy_weryfikacja():
     if not Auth.is_authenticated() or not Auth.has_role('supplier'):
-        return redirect(url_for('supplier.login'))
+        return redirect(url_for('supplier.supplier_login'))
     return render_template('supplier/supplier_dostawy_weryfikacja.html')
 
 @supplier_bp.route('/negocjacje')
-def negocjacje():
+def supplier_negocjacje():
     if not Auth.is_authenticated() or not Auth.has_role('supplier'):
-        return redirect(url_for('supplier.login'))
+        return redirect(url_for('supplier.supplier_login'))
     return render_template('supplier/supplier_negocjacje.html')
 
 @supplier_bp.route('/rozliczenia')
-def rozliczenia():
+def supplier_rozliczenia():
     if not Auth.is_authenticated() or not Auth.has_role('supplier'):
-        return redirect(url_for('supplier.login'))
+        return redirect(url_for('supplier.supplier_login'))
     return render_template('supplier/supplier_rozliczenia.html')
 
 @supplier_bp.route('/profil')
-def profil():
+def supplier_profil():
     if not Auth.is_authenticated() or not Auth.has_role('supplier'):
-        return redirect(url_for('supplier.login'))
+        return redirect(url_for('supplier.supplier_login'))
     return render_template('supplier/supplier_profil.html') 

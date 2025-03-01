@@ -1,35 +1,28 @@
 import pymysql
-from dotenv import load_dotenv
-import os
+import time
 
-# Ładowanie zmiennych środowiskowych
-load_dotenv()
-
-# Konfiguracja połączenia
-db_config = {
-    'host': os.getenv('DB_HOST'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
-    'database': os.getenv('DB_NAME'),
-    'port': int(os.getenv('DB_PORT', 3306))
-}
-
-try:
-    # Próba połączenia
-    connection = pymysql.connect(**db_config)
-    print("Połączenie z bazą danych udane!")
-    
-    # Test zapytania
-    with connection.cursor() as cursor:
-        cursor.execute("SHOW TABLES")
-        tables = cursor.fetchall()
-        print("\nDostępne tabele:")
-        for table in tables:
-            print(f"- {table[0]}")
+def test_connection():
+    try:
+        conn = pymysql.connect(
+            host='flask-app-msbox.chqqwymic43o.us-east-1.rds.amazonaws.com',
+            user='admin',
+            password='1Nieporet!',
+            database='msbox_db',
+            connect_timeout=10
+        )
+        print("Połączenie udane!")
+        
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            result = cursor.fetchone()
+            print(f"Test zapytania: {result}")
             
-except Exception as e:
-    print(f"Błąd połączenia z bazą danych: {e}")
-finally:
-    if 'connection' in locals():
-        connection.close()
-        print("\nPołączenie zamknięte.") 
+        conn.close()
+        print("Połączenie zamknięte poprawnie")
+        
+    except Exception as e:
+        print(f"Błąd połączenia: {e}")
+
+if __name__ == "__main__":
+    print("Próba połączenia z bazą danych...")
+    test_connection() 
