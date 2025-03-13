@@ -1,8 +1,13 @@
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
-
+from __init__ import db
 from .user import User
-from .auth import Auth
 
-__all__ = ['db', 'User', 'Auth'] 
+__all__ = ['db', 'User']
+
+def init_app():
+    # Rozszerzamy __all__
+    global __all__
+    __all__ = ['db', 'User']
+    
+    return {
+        'User': User
+    } 

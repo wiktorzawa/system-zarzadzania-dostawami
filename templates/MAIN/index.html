@@ -28,11 +28,11 @@
                         </h3>
                     </div>
                     <div class="p-4 md:p-5">
-                        <form action="{{ url_for('admin.admin_login') }}" method="GET" id="loginForm">
+                        <form id="loginForm">
                             <p class="text-gray-500 dark:text-gray-400 mb-4">Wybierz odpowiedni panel logowania:</p>
                             <ul class="space-y-4 mb-4">
                                 <li>
-                                    <input type="radio" id="job-1" name="job" value="job-1" class="hidden" required />
+                                    <input type="radio" id="job-1" name="job" value="admin" class="hidden" required />
                                     <label for="job-1" class="option-label group inline-flex items-center justify-between w-full p-5 text-gray-900 bg-white border border-gray-200 rounded-lg cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-400 shadow-soft hover:shadow-nav hover:-translate-y-1">                           
                                         <div class="block">
                                             <div class="w-full text-lg font-semibold text-gray-900 dark:text-white">ADMINISTRATOR</div>
@@ -42,7 +42,7 @@
                                     </label>
                                 </li>
                                 <li>
-                                    <input type="radio" id="job-2" name="job" value="job-2" class="hidden">
+                                    <input type="radio" id="job-2" name="job" value="staff" class="hidden">
                                     <label for="job-2" class="option-label group inline-flex items-center justify-between w-full p-5 text-gray-900 bg-white border border-gray-200 rounded-lg cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-400 shadow-soft hover:shadow-nav hover:-translate-y-1">
                                         <div class="block">
                                             <div class="w-full text-lg font-semibold text-gray-900 dark:text-white">PRACOWNIK</div>
@@ -52,7 +52,7 @@
                                     </label>
                                 </li>
                                 <li>
-                                    <input type="radio" id="job-3" name="job" value="job-3" class="hidden">
+                                    <input type="radio" id="job-3" name="job" value="supplier" class="hidden">
                                     <label for="job-3" class="option-label group inline-flex items-center justify-between w-full p-5 text-gray-900 bg-white border border-gray-200 rounded-lg cursor-pointer dark:border-gray-600 hover:bg-gray-100 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-400 shadow-soft hover:shadow-nav hover:-translate-y-1">
                                         <div class="block">
                                             <div class="w-full text-lg font-semibold text-gray-900 dark:text-white">DOSTAWCA</div>
@@ -62,7 +62,7 @@
                                     </label>
                                 </li>
                             </ul>
-                            <button onclick="submitForm()" class="text-white w-full inline-flex justify-center bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 shadow-soft hover:shadow-nav transition-all duration-400 hover:-translate-y-1">
+                            <button onclick="submitForm(event)" class="text-white w-full inline-flex justify-center bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 shadow-soft hover:shadow-nav transition-all duration-400 hover:-translate-y-1">
                                 ZALOGUJ
                             </button>
                         </form>
@@ -76,19 +76,16 @@
 
 {% block scripts %}
 <script>
-function submitForm() {
-    const form = document.getElementById('loginForm');
-    const selectedJob = document.querySelector('input[name="job"]:checked').value;
-    
-    if (selectedJob === 'job-1') {
-        form.action = "{{ url_for('admin.admin_login') }}";
-    } else if (selectedJob === 'job-2') {
-        form.action = "{{ url_for('staff.staff_login') }}";
-    } else if (selectedJob === 'job-3') {
-        form.action = "{{ url_for('supplier.supplier_login') }}";
+function submitForm(event) {
+    event.preventDefault();
+    const selectedJob = document.querySelector('input[name="job"]:checked');
+    if (!selectedJob) {
+        alert('Proszę wybrać rodzaj konta');
+        return;
     }
     
-    form.submit();
+    const role = selectedJob.value;
+    window.location.href = `/${role}/login`;
 }
 
 document.querySelectorAll('input[name="job"]').forEach(radio => {

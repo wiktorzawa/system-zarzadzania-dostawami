@@ -2,24 +2,20 @@ from datetime import datetime
 import bcrypt
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
-from ..supplier.supplier import Supplier
-from ..staff.staff import Staff
 
 class User(db.Model):
     __tablename__ = 'login_auth_data'
     
-    id = db.Column(db.String(20), primary_key=True)
-    email = db.Column(db.String(255), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.Enum('admin', 'staff', 'supplier'), nullable=False)
-    active = db.Column(db.Boolean, default=True)
-    last_login = db.Column(db.TIMESTAMP, nullable=True)
-    created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
-    updated_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Relacje
-    supplier_profile = db.relationship('Supplier', backref='user', uselist=False)
-    staff_profile = db.relationship('Staff', backref='user', uselist=False)
+    id_login = db.Column(db.String(20), primary_key=True, comment='Identyfikator logowania')
+    related_id = db.Column(db.String(20), unique=True, nullable=False, comment='Powiązany identyfikator użytkownika')
+    email = db.Column(db.String(255), unique=True, nullable=False, comment='Adres email')
+    password_hash = db.Column(db.String(255), nullable=False, comment='Zahaszowane hasło')
+    role = db.Column(db.Enum('admin', 'staff', 'supplier'), nullable=False, comment='Rola użytkownika')
+    failed_login_attempts = db.Column(db.Integer, default=0, comment='Liczba nieudanych prób logowania')
+    locked_until = db.Column(db.TIMESTAMP, nullable=True, comment='Zablokowane do')
+    last_login = db.Column(db.TIMESTAMP, nullable=True, comment='Ostatnie logowanie')
+    created_at = db.Column(db.TIMESTAMP, nullable=True, server_default=db.text('CURRENT_TIMESTAMP'), comment='Data utworzenia')
+    updated_at = db.Column(db.TIMESTAMP, nullable=True, server_default=db.text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='Data aktualizacji')
 
     def set_password(self, password):
         """Ustawia zahaszowane hasło użytkownika"""
@@ -49,7 +45,9 @@ class User(db.Model):
     def get_profile(self):
         """Zwraca odpowiedni profil użytkownika na podstawie roli"""
         if self.role == 'supplier':
-            return self.supplier_profile
+            from ..supplier.supplier import Supplier
+            return Supplier.query.filter_by(id_supplier=self.related_id).first()
         elif self.role in ['admin', 'staff']:
-            return self.staff_profile
+            from ..staff.staff import Staff
+            return Staff.query.filter_by(id_staff=self.related_id).first()
         return None 
