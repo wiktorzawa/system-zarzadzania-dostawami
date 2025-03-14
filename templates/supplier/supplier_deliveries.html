@@ -62,9 +62,9 @@
                             <td class="px-4 py-2">{{ delivery.delivery_category }}</td>
                             <td class="px-4 py-2">{{ delivery.product_class }}</td>
                             <td class="px-4 py-2">{{ delivery.items_count }}</td>
-                            <td class="px-4 py-2">{{ delivery.total_value|round(2) }} {{ delivery.currency }}</td>
-                            <td class="px-4 py-2">{{ delivery.total_value_pln|round(2) }} PLN</td>
-                            <td class="px-4 py-2">{{ delivery.delivery_value|round(2) }} PLN</td>
+                            <td class="px-4 py-2">{{ delivery.total_value|format_currency(delivery.currency) }}</td>
+                            <td class="px-4 py-2">{{ delivery.total_value_pln|format_currency('PLN') }}</td>
+                            <td class="px-4 py-2">{{ delivery.delivery_value|format_currency('PLN') }}</td>
                             <td class="px-4 py-2">
                                 {% if delivery.status == 'new' %}
                                 <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
@@ -231,8 +231,8 @@
                         <td class="px-4 py-2">${product.asin_code || ''}</td>
                         <td class="px-4 py-2">${product.quantity || ''}</td>
                         <td class="px-4 py-2">${product.unit || ''}</td>
-                        <td class="px-4 py-2">${product.price ? product.price.toFixed(2) : 'Brak'}</td>
-                        <td class="px-4 py-2">${product.value ? product.value.toFixed(2) : 'Brak'}</td>
+                        <td class="px-4 py-2">${formatCurrency(product.price || 0, product.currency)}</td>
+                        <td class="px-4 py-2">${formatCurrency(product.value || 0, product.currency)}</td>
                         <td class="px-4 py-2">${product.currency || ''}</td>
                         <td class="px-4 py-2">${product.lot_number || ''}</td>
                         <td class="px-4 py-2">${product.pallet_number || ''}</td>
@@ -344,11 +344,11 @@
                                 <tbody>
                                     <tr>
                                         <td class="py-1 font-medium">Cena:</td>
-                                        <td class="py-1">${product.price !== null ? product.price.toFixed(2) : '-'}</td>
+                                        <td class="py-1">${formatCurrency(product.price || 0, product.currency)}</td>
                                     </tr>
                                     <tr>
                                         <td class="py-1 font-medium">Wartość:</td>
-                                        <td class="py-1">${product.value !== null ? product.value.toFixed(2) : '-'}</td>
+                                        <td class="py-1">${formatCurrency(product.value || 0, product.currency)}</td>
                                     </tr>
                                     <tr>
                                         <td class="py-1 font-medium">Waluta:</td>
@@ -464,5 +464,38 @@
             closeProductDetails();
         }
     });
+
+    function formatCurrency(value, currency = 'PLN') {
+        if (value === null || value === undefined || value === '') {
+            return currency === 'PLN' ? '0,00 zł' : '0,00 €';
+        }
+        
+        try {
+            // Konwertuj na liczbę
+            const numValue = parseFloat(String(value).replace(',', '.'));
+            if (isNaN(numValue)) {
+                return currency === 'PLN' ? '0,00 zł' : '0,00 €';
+            }
+            
+            // Formatuj w polskim formacie
+            const formatted = new Intl.NumberFormat('pl-PL', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+                useGrouping: true
+            }).format(numValue);
+            
+            // Dodaj symbol waluty zgodnie z polskim formatem
+            if (currency === 'PLN') {
+                return `${formatted} zł`;
+            } else if (currency === 'EUR') {
+                return `${formatted} €`;
+            } else {
+                return `${formatted} ${currency}`;
+            }
+        } catch (error) {
+            console.error('Błąd formatowania waluty:', error);
+            return currency === 'PLN' ? '0,00 zł' : '0,00 €';
+        }
+    }
 </script>
 {% endblock %} 

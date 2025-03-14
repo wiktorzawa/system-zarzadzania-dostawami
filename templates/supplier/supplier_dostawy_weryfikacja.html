@@ -83,7 +83,9 @@
                             <th scope="col" class="px-4 py-3">Liczba produktów</th>
                             <th scope="col" class="px-4 py-3">Wartość rynkowa</th>
                             <th scope="col" class="px-4 py-3">Wartość rynkowa (PLN)</th>
-                            <th scope="col" class="px-4 py-3">Cena za LOT (PLN)</th>
+                            <th scope="col" class="px-4 py-3">Cena za LOT brutto (PLN)</th>
+                            <th scope="col" class="px-4 py-3">Waluta</th>
+                            <th scope="col" class="px-4 py-3">Kurs waluty</th>
                             <th scope="col" class="px-4 py-3">Status</th>
                             <th scope="col" class="px-4 py-3">
                                 <span class="sr-only">Akcje</span>
@@ -101,13 +103,29 @@
                             <td class="px-4 py-2">{{ delivery.delivery_category }}</td>
                             <td class="px-4 py-2">{{ delivery.product_class }}</td>
                             <td class="px-4 py-2">{{ delivery.items_count }}</td>
-                            <td class="px-4 py-2">{{ delivery.total_value|round(2) }} {{ delivery.currency }}</td>
-                            <td class="px-4 py-2">{{ delivery.total_value_pln|round(2) }} PLN</td>
-                            <td class="px-4 py-2">{{ delivery.delivery_value|round(2) }} PLN</td>
+                            <td class="px-4 py-2">{{ delivery.total_value|format_currency(delivery.currency) }}</td>
+                            <td class="px-4 py-2">{{ delivery.total_value_pln|format_currency('PLN') }}</td>
+                            <td class="px-4 py-2">{{ delivery.delivery_value|format_currency('PLN') }}</td>
+                            <td class="px-4 py-2">{{ delivery.currency }}</td>
+                            <td class="px-4 py-2">{% if delivery.currency == 'EUR' %}{{ delivery.exchange_rate|format_exchange_rate }}{% else %}-{% endif %}</td>
                             <td class="px-4 py-2">
-                                <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-yellow-900 dark:text-yellow-300">
-                                    {{ delivery.status }}
+                                {% if delivery.status == 'new' %}
+                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
+                                    Nowa
                                 </span>
+                                {% elif delivery.status == 'pending_verification' %}
+                                <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-yellow-900 dark:text-yellow-300">
+                                    Oczekuje na weryfikację
+                                </span>
+                                {% elif delivery.status == 'verified' %}
+                                <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">
+                                    Zweryfikowana
+                                </span>
+                                {% elif delivery.status == 'rejected' %}
+                                <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">
+                                    Odrzucona
+                                </span>
+                                {% endif %}
                             </td>
                             <td class="px-4 py-2">
                                 <button type="button" 
@@ -170,12 +188,12 @@
 
 <!-- Modal szczegółów dostawy -->
 <div id="deliveryDetailsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-4/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+    <div class="relative top-20 mx-auto p-5 border w-4/5 shadow-lg rounded-md bg-gray-50 dark:bg-gray-900">
         <div class="flex flex-col space-y-4">
             <!-- Nagłówek modalu -->
-            <div class="flex justify-between items-center border-b pb-3">
+            <div class="flex justify-between items-center border-b pb-3 dark:border-gray-700">
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                    Szczegóły dostawy <span id="modalDeliveryId"></span>
+                    Szczegóły dostawy <span id="modalDeliveryId" class="text-violet-600 dark:text-violet-400"></span>
                 </h3>
                 <button onclick="closeDeliveryDetails()" class="text-gray-400 hover:text-gray-500">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,22 +202,38 @@
                 </button>
             </div>
             
+            <!-- Informacja o klikaniu w wiersze -->
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 dark:bg-blue-900/30 dark:border-blue-500">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700 dark:text-blue-300">
+                            Kliknij w wiersz produktu, aby zobaczyć jego szczegółowe informacje.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Tabela produktów -->
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
+                            <th scope="col" class="px-4 py-3">ID Dostawy</th>
+                            <th scope="col" class="px-4 py-3">LOT</th>
+                            <th scope="col" class="px-4 py-3">Nr palety</th>
                             <th scope="col" class="px-4 py-3">Nazwa produktu</th>
                             <th scope="col" class="px-4 py-3">EAN</th>
                             <th scope="col" class="px-4 py-3">ASIN</th>
                             <th scope="col" class="px-4 py-3">Ilość</th>
-                            <th scope="col" class="px-4 py-3">Jednostka</th>
                             <th scope="col" class="px-4 py-3">Cena</th>
                             <th scope="col" class="px-4 py-3">Wartość</th>
                             <th scope="col" class="px-4 py-3">Kurs Euro</th>
                             <th scope="col" class="px-4 py-3">Waluta</th>
-                            <th scope="col" class="px-4 py-3">LOT</th>
-                            <th scope="col" class="px-4 py-3">Nr palety</th>
                         </tr>
                     </thead>
                     <tbody id="productsTableBody">
@@ -213,12 +247,12 @@
 
 <!-- Modal szczegółów produktu -->
 <div id="productDetailsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-3/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+    <div class="relative top-20 mx-auto p-5 border w-3/5 shadow-lg rounded-md bg-gray-50 dark:bg-gray-900">
         <div class="flex flex-col space-y-4">
             <!-- Nagłówek modalu -->
-            <div class="flex justify-between items-center border-b pb-3">
+            <div class="flex justify-between items-center border-b pb-3 dark:border-gray-700">
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                    Szczegóły produktu
+                    Szczegóły produktu <span id="modalProductId" class="text-violet-600 dark:text-violet-400"></span>
                 </h3>
                 <button onclick="closeProductDetails()" class="text-gray-400 hover:text-gray-500">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,7 +310,7 @@
                 
                 if (!data.products || data.products.length === 0) {
                     console.log('Brak produktów w odpowiedzi API');
-                    tableBody.innerHTML = '<tr><td colspan="10" class="px-4 py-2 text-center">Brak produktów dla tej dostawy</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="11" class="px-4 py-2 text-center">Brak produktów dla tej dostawy</td></tr>';
                     return;
                 }
                 
@@ -284,21 +318,21 @@
                 data.products.forEach((product, index) => {
                     console.log(`Przetwarzanie produktu ${index + 1}:`, product);
                     const row = document.createElement('tr');
-                    row.className = 'border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer';
+                    row.className = 'border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-200';
                     row.setAttribute('data-product-id', product.id_product);
                     row.onclick = function() { showProductDetails(product.id_product); };
                     row.innerHTML = `
-                        <td class="px-4 py-2">${product.product_name || ''}</td>
-                        <td class="px-4 py-2">${product.ean_code || ''}</td>
-                        <td class="px-4 py-2">${product.asin_code || ''}</td>
-                        <td class="px-4 py-2">${product.quantity || ''}</td>
-                        <td class="px-4 py-2">${product.unit || ''}</td>
-                        <td class="px-4 py-2">${product.price ? product.price.toFixed(2) : 'Brak'}</td>
-                        <td class="px-4 py-2">${product.value ? product.value.toFixed(2) : 'Brak'}</td>
-                        <td class="px-4 py-2">${data.delivery_exchange_rate ? data.delivery_exchange_rate.toFixed(4) : '-'}</td>
-                        <td class="px-4 py-2">${product.currency || ''}</td>
-                        <td class="px-4 py-2">${product.lot_number || ''}</td>
-                        <td class="px-4 py-2">${product.pallet_number || ''}</td>
+                        <td class="px-4 py-2">${product.id_delivery || '-'}</td>
+                        <td class="px-4 py-2">${product.lot_number || '-'}</td>
+                        <td class="px-4 py-2">${product.pallet_number || '-'}</td>
+                        <td class="px-4 py-2">${product.product_name || '-'}</td>
+                        <td class="px-4 py-2">${product.ean_code || '-'}</td>
+                        <td class="px-4 py-2">${product.asin_code || '-'}</td>
+                        <td class="px-4 py-2">${product.quantity || '-'}</td>
+                        <td class="px-4 py-2">${formatCurrency(product.price || 0, product.currency)}</td>
+                        <td class="px-4 py-2">${formatCurrency(product.value || 0, product.currency)}</td>
+                        <td class="px-4 py-2">${data.delivery_exchange_rate ? formatExchangeRate(data.delivery_exchange_rate) : '-'}</td>
+                        <td class="px-4 py-2">${product.currency || '-'}</td>
                     `;
                     tableBody.appendChild(row);
                 });
@@ -306,7 +340,7 @@
             })
             .catch(error => {
                 console.error('Błąd podczas pobierania danych:', error);
-                tableBody.innerHTML = `<tr><td colspan="10" class="px-4 py-2 text-center text-red-500">Błąd: ${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="11" class="px-4 py-2 text-center text-red-500">Błąd: ${error.message}</td></tr>`;
                 alert('Wystąpił błąd podczas pobierania szczegółów dostawy: ' + error.message);
             });
     }
@@ -327,6 +361,7 @@
 <script>
     function showProductDetails(productId) {
         console.log('Otwieranie szczegółów produktu:', productId);
+        document.getElementById('modalProductId').textContent = productId;
         document.getElementById('productDetailsModal').classList.remove('hidden');
         
         // Pokaż animację ładowania
@@ -365,77 +400,73 @@
                 
                 // Przygotuj HTML z danymi produktu
                 let html = `
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <h4 class="font-semibold text-gray-700 dark:text-gray-300">Podstawowe informacje</h4>
-                            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 mt-2">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 rounded-t-lg">Podstawowe informacje</h4>
+                            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                                 <tbody>
-                                    <tr>
-                                        <td class="py-1 font-medium">ID produktu:</td>
-                                        <td class="py-1">${product.id_product || '-'}</td>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">ID produktu:</td>
+                                        <td class="py-2 px-4">${product.id_product || '-'}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">ID dostawy:</td>
+                                        <td class="py-2 px-4">${product.id_delivery || '-'}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Nazwa produktu:</td>
+                                        <td class="py-2 px-4">${product.product_name || '-'}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Kod EAN:</td>
+                                        <td class="py-2 px-4">${product.ean_code || '-'}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Kod ASIN:</td>
+                                        <td class="py-2 px-4">${product.asin_code || '-'}</td>
                                     </tr>
                                     <tr>
-                                        <td class="py-1 font-medium">ID dostawy:</td>
-                                        <td class="py-1">${product.id_delivery || '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Nazwa produktu:</td>
-                                        <td class="py-1">${product.product_name || '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Kod EAN:</td>
-                                        <td class="py-1">${product.ean_code || '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Kod ASIN:</td>
-                                        <td class="py-1">${product.asin_code || '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Ilość:</td>
-                                        <td class="py-1">${product.quantity !== null ? product.quantity : '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Jednostka:</td>
-                                        <td class="py-1">${product.unit || '-'}</td>
+                                        <td class="py-2 px-4 font-medium">Ilość:</td>
+                                        <td class="py-2 px-4">${product.quantity !== null ? product.quantity : '-'}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-700 dark:text-gray-300">Dane finansowe i dodatkowe</h4>
-                            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 mt-2">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 rounded-t-lg">Dane finansowe i dodatkowe</h4>
+                            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                                 <tbody>
-                                    <tr>
-                                        <td class="py-1 font-medium">Cena:</td>
-                                        <td class="py-1">${product.price !== null ? product.price.toFixed(2) : '-'}</td>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Cena:</td>
+                                        <td class="py-2 px-4">${formatCurrency(product.price || 0, product.currency)}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Wartość:</td>
+                                        <td class="py-2 px-4">${formatCurrency(product.value || 0, product.currency)}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Kurs Euro:</td>
+                                        <td class="py-2 px-4">${data.delivery_exchange_rate ? formatExchangeRate(data.delivery_exchange_rate) : '-'}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Waluta:</td>
+                                        <td class="py-2 px-4">${product.currency || '-'}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Numer LOT:</td>
+                                        <td class="py-2 px-4">${product.lot_number || '-'}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Numer palety:</td>
+                                        <td class="py-2 px-4">${product.pallet_number || '-'}</td>
+                                    </tr>
+                                    <tr class="border-b dark:border-gray-600">
+                                        <td class="py-2 px-4 font-medium">Numer wiersza:</td>
+                                        <td class="py-2 px-4">${product.row_num || '-'}</td>
                                     </tr>
                                     <tr>
-                                        <td class="py-1 font-medium">Wartość:</td>
-                                        <td class="py-1">${product.value !== null ? product.value.toFixed(2) : '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Kurs Euro:</td>
-                                        <td class="py-1">${data.delivery_exchange_rate ? data.delivery_exchange_rate.toFixed(4) : '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Waluta:</td>
-                                        <td class="py-1">${product.currency || '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Numer LOT:</td>
-                                        <td class="py-1">${product.lot_number || '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Numer palety:</td>
-                                        <td class="py-1">${product.pallet_number || '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Numer wiersza:</td>
-                                        <td class="py-1">${product.row_num || '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-1 font-medium">Data utworzenia:</td>
-                                        <td class="py-1">${product.created_at ? new Date(product.created_at).toLocaleString() : '-'}</td>
+                                        <td class="py-2 px-4 font-medium">Data utworzenia:</td>
+                                        <td class="py-2 px-4">${product.created_at ? new Date(product.created_at).toLocaleString() : '-'}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -446,14 +477,14 @@
                 // Dodaj oryginalne dane, jeśli są dostępne
                 if (product.original_data) {
                     html += `
-                        <div class="mt-4">
-                            <h4 class="font-semibold text-gray-700 dark:text-gray-300">Oryginalne dane z pliku Excel</h4>
-                            <div class="mt-2 overflow-x-auto">
+                        <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 rounded-t-lg">Oryginalne dane z pliku Excel</h4>
+                            <div class="overflow-x-auto">
                                 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                    <thead>
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                         <tr>
-                                            <th class="px-2 py-1">Kolumna</th>
-                                            <th class="px-2 py-1">Wartość</th>
+                                            <th class="px-4 py-3">Kolumna</th>
+                                            <th class="px-4 py-3">Wartość</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -461,9 +492,9 @@
                     
                     for (const [key, value] of Object.entries(product.original_data)) {
                         html += `
-                            <tr>
-                                <td class="px-2 py-1 font-medium">${key}</td>
-                                <td class="px-2 py-1">${value !== null ? value : '-'}</td>
+                            <tr class="border-b dark:border-gray-600">
+                                <td class="px-4 py-2 font-medium">${key}</td>
+                                <td class="px-4 py-2">${value !== null ? value : '-'}</td>
                             </tr>
                         `;
                     }
@@ -479,14 +510,14 @@
                 // Dodaj informacje o mapowaniu pól, jeśli są dostępne
                 if (product.mapped_fields) {
                     html += `
-                        <div class="mt-4">
-                            <h4 class="font-semibold text-gray-700 dark:text-gray-300">Mapowanie pól</h4>
-                            <div class="mt-2 overflow-x-auto">
+                        <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 rounded-t-lg">Mapowanie pól</h4>
+                            <div class="overflow-x-auto">
                                 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                    <thead>
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                         <tr>
-                                            <th class="px-2 py-1">Pole w bazie danych</th>
-                                            <th class="px-2 py-1">Kolumna w pliku Excel</th>
+                                            <th class="px-4 py-3">Pole w bazie danych</th>
+                                            <th class="px-4 py-3">Kolumna w pliku Excel</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -494,9 +525,9 @@
                     
                     for (const [dbField, excelField] of Object.entries(product.mapped_fields)) {
                         html += `
-                            <tr>
-                                <td class="px-2 py-1 font-medium">${dbField}</td>
-                                <td class="px-2 py-1">${excelField}</td>
+                            <tr class="border-b dark:border-gray-600">
+                                <td class="px-4 py-2 font-medium">${dbField}</td>
+                                <td class="px-4 py-2">${excelField}</td>
                             </tr>
                         `;
                     }
@@ -531,5 +562,101 @@
             closeProductDetails();
         }
     });
+</script>
+
+<!-- Funkcja do formatowania liczb w formacie polskim -->
+<script>
+    function formatNumber(value) {
+        if (value === null || value === undefined || value === '') {
+            return '0,00';
+        }
+        
+        try {
+            // Usuń istniejące formatowanie i zamień przecinki na kropki
+            const cleanValue = String(value)
+                .replace(/\s/g, '')
+                .replace(',', '.');
+            
+            const numValue = parseFloat(cleanValue);
+            if (isNaN(numValue)) {
+                return '0,00';
+            }
+            
+            // Formatuj z dwoma miejscami po przecinku
+            const formatted = numValue.toLocaleString('pl-PL', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+                useGrouping: true
+            });
+            
+            return formatted;
+        } catch (error) {
+            console.error('Błąd formatowania liczby:', error);
+            return '0,00';
+        }
+    }
+    
+    function formatExchangeRate(value) {
+        if (value === null || value === undefined || value === '') {
+            return '0,0000';
+        }
+        
+        try {
+            // Usuń istniejące formatowanie i zamień przecinki na kropki
+            const cleanValue = String(value)
+                .replace(/\s/g, '')
+                .replace(',', '.');
+            
+            const numValue = parseFloat(cleanValue);
+            if (isNaN(numValue)) {
+                return '0,0000';
+            }
+            
+            // Formatuj z czterema miejscami po przecinku
+            const formatted = numValue.toLocaleString('pl-PL', {
+                minimumFractionDigits: 4,
+                maximumFractionDigits: 4,
+                useGrouping: true
+            });
+            
+            return formatted;
+        } catch (error) {
+            console.error('Błąd formatowania kursu:', error);
+            return '0,0000';
+        }
+    }
+
+    function formatCurrency(value, currency = 'PLN') {
+        if (value === null || value === undefined || value === '') {
+            return currency === 'PLN' ? '0,00 zł' : '0,00 €';
+        }
+        
+        try {
+            // Konwertuj na liczbę
+            const numValue = parseFloat(String(value).replace(',', '.'));
+            if (isNaN(numValue)) {
+                return currency === 'PLN' ? '0,00 zł' : '0,00 €';
+            }
+            
+            // Formatuj w polskim formacie
+            const formatted = new Intl.NumberFormat('pl-PL', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+                useGrouping: true
+            }).format(numValue);
+            
+            // Dodaj symbol waluty zgodnie z polskim formatem
+            if (currency === 'PLN') {
+                return `${formatted} zł`;
+            } else if (currency === 'EUR') {
+                return `${formatted} €`;
+            } else {
+                return `${formatted} ${currency}`;
+            }
+        } catch (error) {
+            console.error('Błąd formatowania waluty:', error);
+            return currency === 'PLN' ? '0,00 zł' : '0,00 €';
+        }
+    }
 </script>
 {% endblock %}

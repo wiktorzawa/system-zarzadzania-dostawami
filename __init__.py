@@ -5,9 +5,21 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
+from flask_principal import Principal, Permission, RoleNeed
 from config import config
 import logging
 from sqlalchemy import event
+import locale
+import math
+
+# Ustawienie locale na polski
+try:
+    locale.setlocale(locale.LC_ALL, 'pl_PL.UTF-8')
+except:
+    try:
+        locale.setlocale(locale.LC_ALL, 'Polish_Poland.1250')
+    except:
+        locale.setlocale(locale.LC_ALL, '')
 
 # Konfiguracja logowania
 logging.basicConfig(
@@ -20,6 +32,12 @@ logger = logging.getLogger(__name__)
 db = SQLAlchemy()
 login_manager = LoginManager()
 csrf = CSRFProtect()
+principals = Principal()
+
+# Definiowanie uprawnień
+supplier_permission = Permission(RoleNeed('supplier'))
+staff_permission = Permission(RoleNeed('staff'))
+admin_permission = Permission(RoleNeed('admin'))
 
 # Funkcje obsługi zdarzeń SQLAlchemy
 def checkout_listener(dbapi_connection, connection_record, connection_proxy):
@@ -49,6 +67,7 @@ def create_app(config_name='default'):
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+    principals.init_app(app)
     
     # Konfiguracja CSRF
     app.config['WTF_CSRF_ENABLED'] = True
@@ -75,6 +94,38 @@ def create_app(config_name='default'):
             from models.MAIN.user import User
             return User.query.get(user_id)
     
+    # Konfiguracja Flask-Principal
+    from flask_login import current_user
+    from flask_principal import identity_loaded, UserNeed, RoleNeed
+    
+    @identity_loaded.connect_via(app)
+    def on_identity_loaded(sender, identity):
+        # Dodaj logi do śledzenia procesu
+        logger.info(f"Identity loaded: {identity.id}")
+        
+        # Dodaj UserNeed do tożsamości
+        if hasattr(current_user, 'get_id') and current_user.get_id() is not None:
+            identity.provides.add(UserNeed(current_user.get_id()))
+            logger.info(f"Added UserNeed: {current_user.get_id()}")
+        
+        # Dodaj RoleNeed na podstawie typu użytkownika
+        if hasattr(current_user, 'id_supplier'):
+            identity.provides.add(RoleNeed('supplier'))
+            logger.info("Added RoleNeed: supplier")
+        elif hasattr(current_user, 'id_staff'):
+            # Sprawdź, czy to pracownik czy administrator
+            from models.MAIN.user import User
+            user_auth = User.query.filter_by(related_id=current_user.id_staff).first()
+            if user_auth and user_auth.role == 'admin':
+                identity.provides.add(RoleNeed('admin'))
+                logger.info("Added RoleNeed: admin")
+            else:
+                identity.provides.add(RoleNeed('staff'))
+                logger.info("Added RoleNeed: staff")
+        
+        # Wypisz wszystkie uprawnienia
+        logger.info(f"All permissions: {identity.provides}")
+    
     # Konfiguracja CSP
     @app.after_request
     def add_security_headers(response):
@@ -88,6 +139,69 @@ def create_app(config_name='default'):
                 "connect-src 'self'"
             )
         return response
+    
+    # Dodanie filtrów Jinja2
+    @app.template_filter('format_number')
+    def format_number_filter(value):
+        """Formatuje liczbę w formacie polskim z dwoma miejscami po przecinku."""
+        if value is None:
+            return '0,00'
+        try:
+            # Najpierw konwertujemy na string i czyścimy
+            str_value = str(value).replace(' ', '').replace(',', '.')
+            # Konwertujemy na float i formatujemy
+            num_value = float(str_value)
+            # Używamy format zamiast locale.format_string dla większej kontroli
+            formatted = '{:,.2f}'.format(num_value)
+            # Zamieniamy separatory na format polski
+            return formatted.replace(',', ' ').replace('.', ',')
+        except (ValueError, TypeError, AttributeError) as e:
+            print(f"Błąd formatowania liczby {value}: {str(e)}")
+            return '0,00'
+    
+    @app.template_filter('format_exchange_rate')
+    def format_exchange_rate_filter(value):
+        """Formatuje kurs wymiany w formacie polskim z czterema miejscami po przecinku."""
+        if value is None:
+            return '0,0000'
+        try:
+            # Najpierw konwertujemy na string i czyścimy
+            str_value = str(value).replace(' ', '').replace(',', '.')
+            # Konwertujemy na float i formatujemy
+            num_value = float(str_value)
+            # Używamy format zamiast locale.format_string dla większej kontroli
+            formatted = '{:,.4f}'.format(num_value)
+            # Zamieniamy separatory na format polski
+            return formatted.replace(',', ' ').replace('.', ',')
+        except (ValueError, TypeError, AttributeError) as e:
+            print(f"Błąd formatowania kursu {value}: {str(e)}")
+            return '0,0000'
+    
+    @app.template_filter('format_currency')
+    def format_currency_filter(value, currency='PLN'):
+        """Formatuje kwotę w formacie polskim z symbolem waluty."""
+        if value is None:
+            return '0,00 zł' if currency == 'PLN' else '0,00 €'
+        try:
+            # Konwertujemy na float
+            num_value = float(str(value).replace(' ', '').replace(',', '.'))
+            if math.isnan(num_value):
+                return '0,00 zł' if currency == 'PLN' else '0,00 €'
+            
+            # Formatujemy liczbę w polskim stylu
+            locale.setlocale(locale.LC_ALL, 'pl_PL.UTF-8')
+            formatted = locale.format_string('%.2f', num_value, grouping=True)
+            
+            # Dodajemy symbol waluty zgodnie z polskim formatem
+            if currency == 'PLN':
+                return f'{formatted} zł'
+            elif currency == 'EUR':
+                return f'{formatted} €'
+            else:
+                return f'{formatted} {currency}'
+        except (ValueError, TypeError, AttributeError) as e:
+            print(f"Błąd formatowania waluty {value}: {str(e)}")
+            return '0,00 zł' if currency == 'PLN' else '0,00 €'
     
     with app.app_context():
         # Import modeli

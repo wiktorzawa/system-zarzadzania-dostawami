@@ -726,5 +726,14 @@ endblock %} {% block supplier_content %}
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/supplier/supplier_nowa_dostawa.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/compiled/delivery-calculator.js') }}"></script>
+    <script type="module">
+        import { SupplierDelivery } from '/static/js/supplier/supplier_nowa_dostawa.js';
+        
+        // Inicjalizacja po załadowaniu strony
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Strona załadowana, inicjalizacja SupplierDelivery...');
+            SupplierDelivery.init();
+        });
+    </script>
 {% endblock %}

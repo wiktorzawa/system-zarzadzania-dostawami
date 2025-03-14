@@ -1,11 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app, send_file, session
 from flask_login import login_user, logout_user, login_required, current_user
-from flask_principal import Identity, AnonymousIdentity, identity_changed
 from models.supplier.supplier import Supplier
 from models.MAIN.user import User
 from models.supplier.delivery_file_data import DeliveryFileData
 from models.supplier.delivery_general import DeliveryGeneral
-from __init__ import db, csrf, supplier_permission, logger
+from __init__ import db, csrf
 import pandas as pd
 import io
 from datetime import datetime
@@ -19,43 +18,6 @@ from flask_wtf.csrf import CSRFError
 from utils.delivery_calculator import DeliveryCalculator
 
 supplier_bp = Blueprint('supplier', __name__)
-
-# Obsługa błędu 403 (Forbidden)
-@supplier_bp.errorhandler(403)
-def handle_forbidden(e):
-    # Logowanie próby dostępu
-    logger.warning(f"Próba dostępu do zasobu bez uprawnień: {request.path}, Użytkownik: {current_user.get_id() if current_user.is_authenticated else 'Anonimowy'}")
-    
-    # Sprawdź, czy to żądanie API
-    if request.path.startswith('/supplier/api/'):
-        return jsonify({
-            'success': False,
-            'message': 'Brak uprawnień do wykonania tej operacji'
-        }), 403
-    
-    # Wyloguj użytkownika, aby przerwać pętlę przekierowań
-    if current_user.is_authenticated:
-        # Wyloguj użytkownika
-        logout_user()
-        # Wyczyść sesję
-        session.clear()
-        flash('Nie masz uprawnień do dostępu do panelu dostawcy. Zostałeś wylogowany.', 'warning')
-    else:
-        flash('Nie masz uprawnień do dostępu do tej strony.', 'warning')
-    
-    # Przekieruj do strony głównej zamiast do logowania dostawcy
-    return redirect(url_for('main.index'))
-
-def format_number(value, decimals=2):
-    """Formatuje liczbę do określonej liczby miejsc po przecinku"""
-    if value is None:
-        return 0.0
-    try:
-        # Konwertuj na float i zaokrąglij
-        num_value = float(str(value).replace(' ', '').replace(',', '.'))
-        return round(num_value, decimals)
-    except (ValueError, TypeError, AttributeError):
-        return 0.0
 
 # Konfiguracja S3
 s3_client = boto3.client(
@@ -111,35 +73,21 @@ def upload_to_s3(file_obj, filename, content_type, delivery_id):
 
 @supplier_bp.route('/login', methods=['GET', 'POST'])
 def login_supplier():
-    # Sprawdź, czy użytkownik jest już zalogowany
     if current_user.is_authenticated:
-        # Jeśli użytkownik jest zalogowany jako dostawca, przekieruj do panelu
-        if hasattr(current_user, 'id_supplier'):
-            return redirect(url_for('supplier.supplier_dashboard'))
-        # Jeśli użytkownik jest zalogowany jako inny typ użytkownika, wyloguj go
-        else:
-            logger.warning(f"Użytkownik {current_user.get_id()} próbuje uzyskać dostęp do panelu dostawcy, ale nie jest dostawcą")
-            logout_user()
-            session.clear()
-            flash('Wylogowano z poprzedniej sesji. Zaloguj się jako dostawca.', 'warning')
-            # Nie przekierowuj, tylko pokaż formularz logowania
+        return redirect(url_for('supplier.supplier_dashboard'))
         
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         remember = True if request.form.get('remember') else False
         
-        logger.info(f"Próba logowania dostawcy: {email}")
-        
         auth_data = User.query.filter_by(email=email, role='supplier').first()
         if not auth_data:
-            logger.warning(f"Nieudane logowanie dostawcy - nieprawidłowy email: {email}")
             flash('Nieprawidłowy email lub hasło', 'error')
             return render_template('supplier/login_supplier.html')
             
         supplier = Supplier.query.filter_by(id_supplier=auth_data.related_id).first()
         if not supplier:
-            logger.warning(f"Nieudane logowanie dostawcy - brak powiązanego dostawcy dla: {email}")
             flash('Błąd konfiguracji konta', 'error')
             return render_template('supplier/login_supplier.html')
             
@@ -148,20 +96,11 @@ def login_supplier():
             auth_data.last_login = db.func.now()
             db.session.commit()
             
-            # Logowanie użytkownika w Flask-Login
             login_user(supplier, remember=remember)
-            logger.info(f"Dostawca zalogowany pomyślnie: {email}, ID: {supplier.id_supplier}")
-            
-            # Ustawienie tożsamości w Flask-Principal
-            identity_changed.send(current_app._get_current_object(),
-                                 identity=Identity(supplier.id_supplier))
-            logger.info(f"Tożsamość Flask-Principal ustawiona dla dostawcy: {supplier.id_supplier}")
-            
             return redirect(url_for('supplier.supplier_dashboard'))
             
         auth_data.failed_login_attempts += 1
         db.session.commit()
-        logger.warning(f"Nieudane logowanie dostawcy - nieprawidłowe hasło: {email}")
         flash('Nieprawidłowy email lub hasło', 'error')
     
     return render_template('supplier/login_supplier.html')
@@ -169,60 +108,34 @@ def login_supplier():
 @supplier_bp.route('/logout')
 @login_required
 def logout_supplier():
-    logger.info(f"Wylogowanie dostawcy: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
-    
-    # Wylogowanie użytkownika z Flask-Login
     logout_user()
-    
-    # Usunięcie tożsamości w Flask-Principal
-    identity_changed.send(current_app._get_current_object(),
-                         identity=AnonymousIdentity())
-    logger.info("Tożsamość Flask-Principal zresetowana")
-    
-    # Czyszczenie całej sesji
-    session.clear()
-    logger.info("Sesja wyczyszczona")
-    
     flash('Zostałeś wylogowany', 'info')
-    return redirect(url_for('main.index'))
+    return redirect(url_for('supplier.login_supplier'))
 
 @supplier_bp.route('/dashboard')
 @login_required
-@supplier_permission.require(http_exception=403)
 def supplier_dashboard():
-    logger.info(f"Dostęp do panelu dostawcy: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
-    
-    # Usuń komunikaty flash związane z wylogowaniem, jeśli użytkownik jest zalogowany jako dostawca
-    session.pop('_flashes', None)
-    
     return render_template('supplier/supplier_dashboard.html')
 
 @supplier_bp.route('/profil')
 @login_required
-@supplier_permission.require(http_exception=403)
 def supplier_profil():
-    logger.info(f"Dostęp do profilu dostawcy: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
     return render_template('supplier/supplier_profil.html')
 
 @supplier_bp.route('/deliveries')
 @login_required
-@supplier_permission.require(http_exception=403)
 def supplier_deliveries():
-    # Przekierowanie do widoku dostaw w weryfikacji
-    return redirect(url_for('supplier.supplier_dostawy_weryfikacja'))
+    deliveries = DeliveryGeneral.get_all_by_supplier(current_user.id_supplier)
+    return render_template('supplier/supplier_deliveries.html', deliveries=deliveries)
 
 @supplier_bp.route('/nowa-dostawa')
 @login_required
-@supplier_permission.require(http_exception=403)
 def supplier_nowa_dostawa():
-    logger.info(f"Dostęp do nowej dostawy: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
     return render_template('supplier/supplier_nowa_dostawa.html')
 
 @supplier_bp.route('/dostawy_weryfikacja')
 @login_required
-@supplier_permission.require(http_exception=403)
 def supplier_dostawy_weryfikacja():
-    logger.info(f"Dostęp do dostaw w weryfikacji: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
     page = request.args.get('page', 1, type=int)
     per_page = 10  # liczba dostaw na stronę
     
@@ -241,21 +154,16 @@ def supplier_dostawy_weryfikacja():
 
 @supplier_bp.route('/negocjacje')
 @login_required
-@supplier_permission.require(http_exception=403)
 def supplier_negocjacje():
-    logger.info(f"Dostęp do negocjacji: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
     return render_template('supplier/supplier_negocjacje.html')
 
 @supplier_bp.route('/rozliczenia')
 @login_required
-@supplier_permission.require(http_exception=403)
 def supplier_rozliczenia():
-    logger.info(f"Dostęp do rozliczeń: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
     return render_template('supplier/supplier_rozliczenia.html')
 
 @supplier_bp.route('/api/process-excel', methods=['POST'])
 @login_required
-@supplier_permission.require(http_exception=403)
 @csrf.exempt
 def process_excel():
     from flask_wtf.csrf import CSRFError
@@ -668,10 +576,8 @@ def process_excel():
 
 @supplier_bp.route('/api/save-delivery', methods=['POST'])
 @login_required
-@supplier_permission.require(http_exception=403)
 def save_delivery():
     try:
-        logger.info(f"Zapisywanie dostawy przez dostawcę: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
         # Sprawdzenie czy użytkownik jest zalogowany jako dostawca
         if not isinstance(current_user, Supplier):
             return jsonify({
@@ -789,9 +695,14 @@ def save_delivery():
 
 @supplier_bp.route('/api/refresh-session', methods=['GET'])
 @login_required
-@supplier_permission.require(http_exception=403)
 def refresh_session():
-    logger.info(f"Odświeżanie sesji przez dostawcę: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
+    # Sprawdzenie czy użytkownik jest zalogowany jako dostawca
+    if not isinstance(current_user, Supplier):
+        return jsonify({
+            'success': False,
+            'message': 'Brak uprawnień'
+        }), 403
+        
     try:
         # Aktualizacja last_login
         auth_data = current_user.get_auth_data()
@@ -811,9 +722,7 @@ def refresh_session():
 
 @supplier_bp.route('/api/delivery-products/<path:delivery_id>')
 @login_required
-@supplier_permission.require(http_exception=403)
 def get_delivery_products(delivery_id):
-    logger.info(f"Pobieranie produktów dostawy {delivery_id} przez dostawcę: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
     """
     Pobiera produkty dla danej dostawy
     """
@@ -870,10 +779,10 @@ def get_delivery_products(delivery_id):
                 'product_name': product.product_name,
                 'ean_code': product.ean_code,
                 'asin_code': product.asin_code,
-                'quantity': format_number(product.quantity) if product.quantity else None,
+                'quantity': float(product.quantity) if product.quantity else None,
                 'unit': product.unit,
-                'price': format_number(product.price) if product.price else None,
-                'value': format_number(product.value) if product.value else None,
+                'price': float(product.price) if product.price else None,
+                'value': float(product.value) if product.value else None,
                 'currency': product.currency or delivery_currency or 'EUR',
                 'lot_number': product.lot_number,
                 'pallet_number': product.pallet_number,
@@ -898,9 +807,7 @@ def get_delivery_products(delivery_id):
 
 @supplier_bp.route('/api/product-details/<product_id>')
 @login_required
-@supplier_permission.require(http_exception=403)
 def get_product_details(product_id):
-    logger.info(f"Pobieranie szczegółów produktu {product_id} przez dostawcę: {current_user.id_supplier if hasattr(current_user, 'id_supplier') else 'Unknown'}")
     print(f"Pobieranie szczegółów produktu {product_id}")
     
     try:
@@ -932,10 +839,10 @@ def get_product_details(product_id):
             'product_name': product.product_name,
             'ean_code': product.ean_code,
             'asin_code': product.asin_code,
-            'quantity': format_number(product.quantity) if product.quantity else None,
+            'quantity': float(product.quantity) if product.quantity else None,
             'unit': product.unit,
-            'price': format_number(product.price) if product.price else None,
-            'value': format_number(product.value) if product.value else None,
+            'price': float(product.price) if product.price else None,
+            'value': float(product.value) if product.value else None,
             'currency': product.currency,
             'lot_number': product.lot_number,
             'pallet_number': product.pallet_number,

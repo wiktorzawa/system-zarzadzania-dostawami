@@ -2,6 +2,9 @@
  * Moduł obsługujący dostawy w panelu dostawcy
  */
 
+// Importuj kalkulator
+import { DeliveryCalculator } from '../compiled/delivery-calculator.js';
+
 const SupplierDelivery = {
     /**
      * SEKCJA 1: KONFIGURACJA
@@ -118,6 +121,7 @@ const SupplierDelivery = {
      */
     elements: {
         init() {
+            console.log('Inicjalizacja elementów...');
             // Formularze
             this.forms = {
                 deliveryForm: document.getElementById('deliveryForm'),
@@ -174,6 +178,11 @@ const SupplierDelivery = {
                 lotsCount: document.getElementById('lots_count'),
                 palletsCount: document.getElementById('pallets_count')
             };
+
+            // Inicjalizacja wartości
+            if (this.summaryElements.totalValue) {
+                this.summaryElements.totalValue.textContent = '0.00';
+            }
 
             // Kontenery
             this.containers = {
@@ -365,17 +374,17 @@ const SupplierDelivery = {
         },
 
         parseNumber(value) {
-            if (!value || value === "") return 0;
+            if (!value || value === "") return 0.00;
             
             let str = String(value).trim();
             
             if (str.includes("e")) {
-                return parseFloat(str) || 0;
+                return Number(parseFloat(str) || 0).toFixed(2);
             }
             
             str = str.replace(/[^\d.,\-]/g, "");
             
-            if (!str) return 0;
+            if (!str) return 0.00;
             
             if (str.includes(",") && str.includes(".")) {
                 str = str.replace(/\./g, "").replace(",", ".");
@@ -384,7 +393,7 @@ const SupplierDelivery = {
             }
             
             const result = parseFloat(str);
-            return isNaN(result) ? 0 : result;
+            return isNaN(result) ? 0.00 : Number(result).toFixed(2);
         },
 
         formatCurrency(value, currency) {
@@ -405,22 +414,85 @@ const SupplierDelivery = {
         },
 
         calculateDeliveryValue(marketValue, percentage, currency, exchangeRate = 1, vatRate = "23", priceType = "net") {
-            const marketValuePLN = currency === "EUR" ? marketValue * exchangeRate : marketValue;
-            const percentageValue = percentage / 100;
-            let lotPrice = marketValuePLN * percentageValue;
+            // Użyj kalkulatora z TypeScript
+            return DeliveryCalculator.calculateDeliveryValueSimple(
+                marketValue,
+                percentage,
+                currency,
+                exchangeRate,
+                vatRate,
+                priceType
+            );
+        },
+
+        updateCalculations() {
+            const fields = SupplierDelivery.elements.formFields;
+            const elements = SupplierDelivery.elements.summaryElements;
             
-            if (priceType === "net" && vatRate === "23") {
-                lotPrice = lotPrice * (1 + SupplierDelivery.config.VAT_RATES["23"]);
+            // Pobierz wartości
+            const marketValue = this.parseNumber(elements.totalValue.textContent);
+            const percentage = this.parseNumber(fields.valuePercentage.value);
+            const currency = fields.currency.value;
+            const exchangeRate = this.parseNumber(fields.exchangeRate.value) || 1;
+            const vatRate = document.querySelector('input[name="vat_rate"]:checked')?.value || "23";
+            const priceType = document.querySelector('input[name="price_type"]:checked')?.value || "net";
+            
+            console.log('Parametry do kalkulacji:', {
+                marketValue,
+                percentage,
+                currency,
+                exchangeRate,
+                vatRate,
+                priceType
+            });
+            
+            // Oblicz wartości
+            const result = this.calculateDeliveryValue(
+                marketValue,
+                percentage,
+                currency,
+                exchangeRate,
+                vatRate,
+                priceType
+            );
+            
+            // Aktualizuj pola w tabeli podsumowania
+            document.getElementById('summary_table_lot').textContent = elements.lotNumber.value || '-';
+            document.getElementById('summary_table_pallets').textContent = elements.palletNumber.value || '-';
+            document.getElementById('summary_table_category').textContent = fields.category.value === 'other' ? fields.otherCategory.value : fields.category.value;
+            document.getElementById('summary_table_class').textContent = fields.productClass.value;
+            document.getElementById('summary_table_products').textContent = elements.productsCount.textContent;
+            document.getElementById('summary_table_vat').textContent = SupplierDelivery.utils.formatNumber(vatRate) + '%';
+            document.getElementById('summary_table_percentage').textContent = SupplierDelivery.utils.formatNumber(percentage) + '%';
+            document.getElementById('summary_table_market_value').textContent = this.formatCurrency(result.totalMarketValue, currency);
+            document.getElementById('summary_table_market_value_pln').textContent = this.formatCurrency(result.totalMarketValuePLN, 'PLN');
+            document.getElementById('summary_table_lot_price').textContent = this.formatCurrency(result.deliveryValue, 'PLN');
+            document.getElementById('summary_table_currency').textContent = currency;
+            
+            // Wyświetl numer dostawy jeśli istnieje
+            if (SupplierDelivery.fileHandler.processedData?.delivery_id) {
+                const deliveryIdElement = document.getElementById('summary_table_delivery_id');
+                if (deliveryIdElement) {
+                    deliveryIdElement.textContent = SupplierDelivery.fileHandler.processedData.delivery_id;
+                }
             }
             
-            return {
-                marketValueOriginal: marketValue,
-                marketValuePLN: marketValuePLN,
-                deliveryValue: lotPrice,
-                vatAmount: priceType === "net" ? 
-                    (lotPrice / (1 + SupplierDelivery.config.VAT_RATES[vatRate])) * 
-                    SupplierDelivery.config.VAT_RATES[vatRate] : 0
-            };
+            // Aktualizuj łączną wartość
+            const formattedTotalValue = SupplierDelivery.utils.formatNumber(result.totalMarketValue);
+            elements.totalValue.textContent = formattedTotalValue;
+            document.getElementById('total_value').textContent = formattedTotalValue;
+            
+            if (currency === 'EUR') {
+                document.getElementById('summary_table_exchange_rate').textContent = SupplierDelivery.utils.formatExchangeRate(exchangeRate);
+                document.getElementById('exchange_rate_header').classList.remove('hidden');
+                document.getElementById('summary_table_exchange_rate').classList.remove('hidden');
+            } else {
+                document.getElementById('exchange_rate_header').classList.add('hidden');
+                document.getElementById('summary_table_exchange_rate').classList.add('hidden');
+            }
+            
+            console.log('Podsumowanie zaktualizowane');
+            return result;
         }
     },
 
@@ -627,6 +699,7 @@ const SupplierDelivery = {
             const fileList = SupplierDelivery.elements.fileInputs.fileList;
             const row = document.createElement('tr');
             row.className = 'bg-white border-b dark:bg-gray-800 dark:border-gray-700';
+            row.setAttribute('data-filename', file.name);
             
             // Formatowanie rozmiaru pliku
             const fileSize = SupplierDelivery.utils.formatFileSize(file.size);
@@ -693,7 +766,17 @@ const SupplierDelivery = {
                 return;
             }
 
+            // Sprawdź czy plik nie został już dodany
+            const fileList = SupplierDelivery.elements.fileInputs.fileList;
+            const existingFiles = Array.from(fileList.getElementsByTagName('td')).map(td => td.textContent);
+
             for (const file of files) {
+                // Sprawdź czy plik nie został już dodany
+                if (existingFiles.includes(file.name)) {
+                    console.log(`Plik ${file.name} został już dodany, pomijam`);
+                    continue;
+                }
+
                 try {
                     // Sprawdź rozszerzenie pliku
                     const fileExtension = file.name.split('.').pop().toLowerCase();
@@ -782,8 +865,7 @@ const SupplierDelivery = {
                         SupplierDelivery.ui.showNotification(error.message || 'Wystąpił nieoczekiwany błąd', 'error');
                         
                         // Usuń plik z tabeli w przypadku błędu
-                        const fileList = document.getElementById('file-list');
-                        const existingRow = fileList.querySelector(`[data-filename="${file.name}"]`);
+                        const existingRow = fileList.querySelector(`tr[data-filename="${file.name}"]`);
                         if (existingRow) {
                             existingRow.remove();
                         }
@@ -804,24 +886,6 @@ const SupplierDelivery = {
                 } catch (error) {
                     console.error('Błąd podczas przetwarzania pliku:', error);
                     SupplierDelivery.ui.showNotification(error.message || 'Wystąpił nieoczekiwany błąd', 'error');
-                    
-                    // Usuń plik z tabeli w przypadku błędu
-                    const fileList = document.getElementById('file-list');
-                    const existingRow = fileList.querySelector(`[data-filename="${file.name}"]`);
-                    if (existingRow) {
-                        existingRow.remove();
-                    }
-                    
-                    // Sprawdź czy tabela jest pusta i dodaj komunikat
-                    if (fileList && (!fileList.children.length || fileList.children.length === 0)) {
-                        fileList.innerHTML = `
-                            <tr class="bg-white dark:bg-gray-800">
-                                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                    Brak wgranych plików
-                                </td>
-                            </tr>
-                        `;
-                    }
                 }
             }
         },
@@ -898,9 +962,12 @@ const SupplierDelivery = {
                 
                 // Aktualizacja wartości
                 if (data.summary.total_value) {
-                    const formattedValue = parseFloat(data.summary.total_value).toFixed(2);
+                    const formattedValue = SupplierDelivery.utils.formatNumber(data.summary.total_value);
                     elements.totalValue.textContent = formattedValue;
                     document.getElementById('total_value').textContent = formattedValue;
+                } else {
+                    elements.totalValue.textContent = '0,00';
+                    document.getElementById('total_value').textContent = '0,00';
                 }
                 
                 // Aktualizacja LOT
@@ -957,11 +1024,20 @@ const SupplierDelivery = {
                 tableBody.innerHTML = data.rows.map(row => {
                     return `
                         <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                            ${data.headers.map(header => `
-                                <td class="px-4 py-3 text-gray-900 dark:text-gray-300">
-                                    ${row[header] !== null && row[header] !== undefined ? row[header] : ''}
-                                </td>
-                            `).join('')}
+                            ${data.headers.map(header => {
+                                let cellValue = row[header];
+                                // Formatowanie wartości liczbowych
+                                if (header === 'WARTOSC' || header === 'CENA') {
+                                    if (cellValue !== null && cellValue !== undefined) {
+                                        cellValue = SupplierDelivery.utils.formatNumber(cellValue);
+                                    }
+                                }
+                                return `
+                                    <td class="px-4 py-3 text-gray-900 dark:text-gray-300">
+                                        ${cellValue !== null && cellValue !== undefined ? cellValue : ''}
+                                    </td>
+                                `;
+                            }).join('')}
                         </tr>
                     `;
                 }).join('');
@@ -969,7 +1045,24 @@ const SupplierDelivery = {
             
             // Po aktualizacji danych, odśwież podsumowanie w kroku 4
             if (SupplierDelivery.stepper.currentStep === 3) {
+                console.log('Aktualizuję podsumowanie po wczytaniu pliku');
                 SupplierDelivery.ui.updateSummary();
+                
+                // Aktualizuj wartości w polach
+                if (data.summary) {
+                    elements.productsCount.textContent = data.summary.total_rows || '0';
+                    elements.totalValue.textContent = SupplierDelivery.utils.formatNumber(data.summary.total_value || 0);
+                    elements.lotsCount.textContent = data.summary.lots?.length || '0';
+                    elements.palletsCount.textContent = data.summary.pallets?.length || '0';
+                    
+                    // Aktualizuj numery LOT i palet
+                    if (data.summary.lots) {
+                        elements.lotNumber.value = data.summary.lots.join(', ');
+                    }
+                    if (data.summary.pallets) {
+                        elements.palletNumber.value = data.summary.pallets.join(', ');
+                    }
+                }
             }
         },
 
@@ -1003,58 +1096,38 @@ const SupplierDelivery = {
         updateSummary() {
             console.log('Aktualizacja podsumowania...');
             
-            const elements = SupplierDelivery.elements.summaryElements;
-            const fields = SupplierDelivery.elements.formFields;
+            // Użyj kalkulatora do aktualizacji wszystkich wartości
+            const result = SupplierDelivery.calculator.updateCalculations();
             
-            // Pobierz wartości
-            const marketValue = parseFloat(elements.totalValue.textContent) || 0;
-            const currency = fields.currency.value;
-            const exchangeRate = parseFloat(fields.exchangeRate.value) || 1;
-            const percentage = parseInt(fields.valuePercentage.value) || 0;
-            const vatRate = document.querySelector('input[name="vat_rate"]:checked')?.value || '23';
-            const priceType = document.querySelector('input[name="price_type"]:checked')?.value || 'net';
+            // Aktualizuj wartości w kroku 3
+            SupplierDelivery.ui.updateStep3Summary();
             
-            console.log('Wartości do kalkulacji:', {
-                marketValue,
-                currency,
-                exchangeRate,
-                percentage,
-                vatRate,
-                priceType
-            });
+            return result;
+        },
+
+        updateStep3Summary() {
+            console.log('Aktualizuję podsumowanie kroku 3');
+            const elements = SupplierDelivery.elements;
             
-            // Oblicz wartości
-            const marketValuePLN = currency === 'EUR' ? marketValue * exchangeRate : marketValue;
-            const percentageValue = percentage / 100;
-            let lotPrice = marketValuePLN * percentageValue;
+            // Aktualizuj pola podsumowania
+            elements.summaryElements.deliveryDate.value = elements.formFields.deliveryDate.value;
+            elements.summaryElements.category.value = elements.formFields.category.value === 'other' ? 
+                elements.formFields.otherCategory.value : 
+                elements.formFields.category.value;
+            elements.summaryElements.productClass.value = elements.formFields.productClass.value;
+            elements.summaryElements.currency.value = elements.formFields.currency.value;
             
-            if (priceType === 'net' && vatRate === '23') {
-                lotPrice = lotPrice * (1 + 0.23); // Dodaj VAT
-            }
-            
-            // Aktualizuj pola w tabeli podsumowania
-            document.getElementById('summary_table_lot').textContent = elements.lotNumber.value || '-';
-            document.getElementById('summary_table_pallets').textContent = elements.palletNumber.value || '-';
-            document.getElementById('summary_table_category').textContent = fields.category.value === 'other' ? fields.otherCategory.value : fields.category.value;
-            document.getElementById('summary_table_class').textContent = fields.productClass.value;
-            document.getElementById('summary_table_products').textContent = elements.productsCount.textContent;
-            document.getElementById('summary_table_vat').textContent = vatRate + '%';
-            document.getElementById('summary_table_percentage').textContent = percentage + '%';
-            document.getElementById('summary_table_market_value').textContent = this.formatCurrency(marketValue, currency);
-            document.getElementById('summary_table_market_value_pln').textContent = this.formatCurrency(marketValuePLN, 'PLN');
-            document.getElementById('summary_table_lot_price').textContent = this.formatCurrency(lotPrice, 'PLN');
-            document.getElementById('summary_table_currency').textContent = currency;
-            
-            if (currency === 'EUR') {
-                document.getElementById('summary_table_exchange_rate').textContent = exchangeRate;
-                document.getElementById('exchange_rate_header').classList.remove('hidden');
-                document.getElementById('summary_table_exchange_rate').classList.remove('hidden');
+            // Formatuj kurs wymiany
+            const exchangeRate = elements.formFields.exchangeRate.value;
+            if (exchangeRate) {
+                elements.summaryElements.exchangeRate.value = SupplierDelivery.utils.formatExchangeRate(exchangeRate);
             } else {
-                document.getElementById('exchange_rate_header').classList.add('hidden');
-                document.getElementById('summary_table_exchange_rate').classList.add('hidden');
+                elements.summaryElements.exchangeRate.value = '';
             }
             
-            console.log('Podsumowanie zaktualizowane');
+            elements.summaryElements.vat.value = Array.from(elements.formFields.vatRadios).find(radio => radio.checked)?.value || '';
+            elements.summaryElements.priceType.value = Array.from(elements.formFields.priceTypeRadios).find(radio => radio.checked)?.value || '';
+            elements.summaryElements.valuePercentage.value = elements.formFields.valuePercentage.value;
         }
     },
 
@@ -1075,6 +1148,44 @@ const SupplierDelivery = {
             } else {
                 return (size / (1024 * 1024)).toFixed(2) + ' MB';
             }
+        },
+
+        formatNumber(value) {
+            // Funkcja do formatowania liczb z dwoma miejscami po przecinku w formacie polskim
+            if (value === null || value === undefined || value === '') {
+                return '0,00';
+            }
+            
+            // Konwertuj na liczbę
+            const numValue = parseFloat(String(value).replace(',', '.'));
+            if (isNaN(numValue)) {
+                return '0,00';
+            }
+            
+            // Formatuj z dwoma miejscami po przecinku
+            return new Intl.NumberFormat('pl-PL', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(numValue);
+        },
+
+        formatExchangeRate(rate) {
+            // Funkcja do formatowania kursu wymiany z czterema miejscami po przecinku w formacie polskim
+            if (rate === null || rate === undefined || rate === '') {
+                return '0,0000';
+            }
+            
+            // Konwertuj na liczbę
+            const numValue = parseFloat(String(rate).replace(',', '.'));
+            if (isNaN(numValue)) {
+                return '0,0000';
+            }
+            
+            // Formatuj z czterema miejscami po przecinku
+            return new Intl.NumberFormat('pl-PL', {
+                minimumFractionDigits: 4,
+                maximumFractionDigits: 4
+            }).format(numValue);
         }
     },
 
@@ -1310,6 +1421,18 @@ const SupplierDelivery = {
             }
         },
 
+        updateSummary() {
+            console.log('Aktualizacja podsumowania...');
+            
+            // Użyj kalkulatora do aktualizacji wszystkich wartości
+            const result = SupplierDelivery.calculator.updateCalculations();
+            
+            // Aktualizuj wartości w kroku 3
+            SupplierDelivery.ui.updateStep3Summary();
+            
+            return result;
+        },
+
         updateStep3Summary() {
             console.log('Aktualizuję podsumowanie kroku 3');
             const elements = SupplierDelivery.elements;
@@ -1321,97 +1444,65 @@ const SupplierDelivery = {
                 elements.formFields.category.value;
             elements.summaryElements.productClass.value = elements.formFields.productClass.value;
             elements.summaryElements.currency.value = elements.formFields.currency.value;
-            elements.summaryElements.exchangeRate.value = elements.formFields.exchangeRate.value;
+            
+            // Formatuj kurs wymiany
+            const exchangeRate = elements.formFields.exchangeRate.value;
+            if (exchangeRate) {
+                elements.summaryElements.exchangeRate.value = SupplierDelivery.utils.formatExchangeRate(exchangeRate);
+            } else {
+                elements.summaryElements.exchangeRate.value = '';
+            }
+            
             elements.summaryElements.vat.value = Array.from(elements.formFields.vatRadios).find(radio => radio.checked)?.value || '';
             elements.summaryElements.priceType.value = Array.from(elements.formFields.priceTypeRadios).find(radio => radio.checked)?.value || '';
             elements.summaryElements.valuePercentage.value = elements.formFields.valuePercentage.value;
-        },
+        }
+    },
 
-        updateSummary() {
-            console.log('Aktualizacja podsumowania...');
-            
-            const elements = SupplierDelivery.elements.summaryElements;
-            const fields = SupplierDelivery.elements.formFields;
-            
-            // Pobierz wartości
-            const marketValue = parseFloat(elements.totalValue.textContent) || 0;
-            const currency = fields.currency.value;
-            const exchangeRate = parseFloat(fields.exchangeRate.value) || 1;
-            const percentage = parseInt(fields.valuePercentage.value) || 0;
-            const vatRate = document.querySelector('input[name="vat_rate"]:checked')?.value || '23';
-            const priceType = document.querySelector('input[name="price_type"]:checked')?.value || 'net';
-            
-            console.log('Wartości do kalkulacji:', {
-                marketValue,
-                currency,
-                exchangeRate,
-                percentage,
-                vatRate,
-                priceType
+    setupEventListeners() {
+        console.log('Inicjalizacja event listenerów...');
+        this.formHandler.setupEventListeners();
+    },
+
+    setupFileHandling() {
+        console.log('Inicjalizacja obsługi plików...');
+        this.fileHandler.setupFileHandling();
+    },
+
+    init() {
+        console.log('Inicjalizacja modułu SupplierDelivery...');
+        this.elements.init();
+        this.setupEventListeners();
+        this.setupFileHandling();
+        
+        // Inicjalizacja obsługi waluty
+        const currencySelect = document.getElementById('currency');
+        const exchangeRateContainer = document.getElementById('exchange_rate_container');
+        
+        console.log('Elementy waluty:', {
+            currencySelect: !!currencySelect,
+            exchangeRateContainer: !!exchangeRateContainer
+        });
+        
+        if (currencySelect && exchangeRateContainer) {
+            currencySelect.addEventListener('change', (e) => {
+                console.log('Zmiana waluty:', e.target.value);
+                if (e.target.value === 'EUR') {
+                    console.log('Pokazuję pole kursu EUR');
+                    exchangeRateContainer.classList.remove('hidden');
+                } else {
+                    console.log('Ukrywam pole kursu EUR');
+                    exchangeRateContainer.classList.add('hidden');
+                }
             });
             
-            // Oblicz wartości
-            const marketValuePLN = currency === 'EUR' ? marketValue * exchangeRate : marketValue;
-            const percentageValue = percentage / 100;
-            let lotPrice = marketValuePLN * percentageValue;
-            
-            if (priceType === 'net' && vatRate === '23') {
-                lotPrice = lotPrice * (1 + 0.23); // Dodaj VAT
+            // Sprawdź początkową wartość
+            if (currencySelect.value === 'EUR') {
+                exchangeRateContainer.classList.remove('hidden');
             }
-            
-            // Aktualizuj pola w tabeli podsumowania
-            document.getElementById('summary_table_lot').textContent = elements.lotNumber.value || '-';
-            document.getElementById('summary_table_pallets').textContent = elements.palletNumber.value || '-';
-            document.getElementById('summary_table_category').textContent = fields.category.value === 'other' ? fields.otherCategory.value : fields.category.value;
-            document.getElementById('summary_table_class').textContent = fields.productClass.value;
-            document.getElementById('summary_table_products').textContent = elements.productsCount.textContent;
-            document.getElementById('summary_table_vat').textContent = vatRate + '%';
-            document.getElementById('summary_table_percentage').textContent = percentage + '%';
-            document.getElementById('summary_table_market_value').textContent = this.formatCurrency(marketValue, currency);
-            document.getElementById('summary_table_market_value_pln').textContent = this.formatCurrency(marketValuePLN, 'PLN');
-            document.getElementById('summary_table_lot_price').textContent = this.formatCurrency(lotPrice, 'PLN');
-            document.getElementById('summary_table_currency').textContent = currency;
-            
-            if (currency === 'EUR') {
-                document.getElementById('summary_table_exchange_rate').textContent = exchangeRate;
-                document.getElementById('exchange_rate_header').classList.remove('hidden');
-                document.getElementById('summary_table_exchange_rate').classList.remove('hidden');
-            } else {
-                document.getElementById('exchange_rate_header').classList.add('hidden');
-                document.getElementById('summary_table_exchange_rate').classList.add('hidden');
-            }
-            
-            console.log('Podsumowanie zaktualizowane');
-        },
-
-        formatCurrency(value, currency) {
-            return new Intl.NumberFormat('pl-PL', {
-                style: 'currency',
-                currency: currency,
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }).format(value);
         }
     }
 };
 
-// Inicjalizacja przy załadowaniu strony
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Inicjalizacja aplikacji...');
-    
-    // Inicjalizacja elementów
-    SupplierDelivery.elements.init();
-    console.log('Elementy zainicjalizowane');
-    
-    // Inicjalizacja event listenerów
-    SupplierDelivery.formHandler.setupEventListeners();
-    console.log('Event listenery zainicjalizowane');
-    
-    // Inicjalizacja obsługi plików
-    SupplierDelivery.fileHandler.setupFileHandling();
-    console.log('Obsługa plików zainicjalizowana');
-    
-    // Pokaż pierwszy krok
-    SupplierDelivery.stepper.showStep(1);
-    console.log('Pierwszy krok wyświetlony');
-});
+// Eksportuj moduł
+export { SupplierDelivery };
