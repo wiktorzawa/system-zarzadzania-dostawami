@@ -88,6 +88,15 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ url_for('staff.staff_nowe_dostawy') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+                            <path d="M18 0H2a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2v4a1 1 0 0 0 1.707.707L10.414 13H18a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2Zm-7.707 9.707a1 1 0 0 1-1.414 0L7.05 7.879a2.978 2.978 0 0 1 4.242-4.242A3.02 3.02 0 0 1 12.243 6c0 .788-.311 1.566-.879 2.121l-.071.071Z"/>
+                        </svg>
+                        <span class="flex-1 ms-3 whitespace-nowrap">Nowe dostawy</span>
+                        <span id="new-deliveries-badge" class="hidden items-center justify-center w-3 h-3 p-3 ms-3 text-sm font-medium text-white bg-red-500 rounded-full dark:bg-red-600">0</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M5 5V.13a2.96 2.96 0 0 0-1.293.749L.879 3.707A2.96 2.96 0 0 0 .13 5H5Z"/>
@@ -180,5 +189,38 @@
             }
         });
     </script>
+
+    <!-- Skrypt do sprawdzania nowych dostaw -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Funkcja do sprawdzania liczby nowych dostaw
+            function checkNewDeliveries() {
+                fetch('{{ url_for("staff.check_new_deliveries") }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        const badge = document.getElementById('new-deliveries-badge');
+                        if (data.count > 0) {
+                            badge.textContent = data.count;
+                            badge.classList.remove('hidden');
+                            badge.classList.add('inline-flex');
+                        } else {
+                            badge.classList.add('hidden');
+                            badge.classList.remove('inline-flex');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Błąd podczas sprawdzania nowych dostaw:', error);
+                    });
+            }
+            
+            // Sprawdź przy ładowaniu strony
+            checkNewDeliveries();
+            
+            // Sprawdzaj co 5 minut
+            setInterval(checkNewDeliveries, 5 * 60 * 1000);
+        });
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html> 

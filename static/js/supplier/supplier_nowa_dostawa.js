@@ -251,6 +251,16 @@ const SupplierDelivery = {
                     
                     // Aktualizuj podsumowanie z kroku 1
                     SupplierDelivery.ui.updateStep3Summary();
+                    
+                    // Dodaj event listener do pola kursu EUR w kroku 3, aby aktualizował wartości przy zmianie
+                    const exchangeRateField = document.getElementById('summary_exchange_rate');
+                    if (exchangeRateField) {
+                        exchangeRateField.addEventListener('input', () => {
+                            console.log('Zmieniono wartość kursu EUR w kroku 3 na:', exchangeRateField.value);
+                            // Aktualizuj podsumowanie po zmianie kursu
+                            SupplierDelivery.ui.updateSummary();
+                        });
+                    }
                 }
                 
                 // Specjalna obsługa dla kroku 4
@@ -433,7 +443,18 @@ const SupplierDelivery = {
             const marketValue = this.parseNumber(elements.totalValue.textContent);
             const percentage = this.parseNumber(fields.valuePercentage.value);
             const currency = fields.currency.value;
-            const exchangeRate = this.parseNumber(fields.exchangeRate.value) || 1;
+            
+            // Użyj wartości kursu z kroku 3 jeśli istnieje, w przeciwnym razie z kroku 1
+            // To zapewni, że krok 4 zawsze używa najbardziej aktualnej wartości kursu
+            let exchangeRate;
+            if (currency === 'EUR') {
+                const step3ExchangeRate = elements.exchangeRate.value;
+                exchangeRate = step3ExchangeRate || fields.exchangeRate.value;
+                console.log('Kurs EUR używany w obliczeniach (krok 4):', exchangeRate);
+            } else {
+                exchangeRate = 1;
+            }
+            
             const vatRate = document.querySelector('input[name="vat_rate"]:checked')?.value || "23";
             const priceType = document.querySelector('input[name="price_type"]:checked')?.value || "net";
             
@@ -483,7 +504,8 @@ const SupplierDelivery = {
             document.getElementById('total_value').textContent = formattedTotalValue;
             
             if (currency === 'EUR') {
-                document.getElementById('summary_table_exchange_rate').textContent = SupplierDelivery.utils.formatExchangeRate(exchangeRate);
+                // Wyświetl dokładnie tę samą wartość kursu, co w kroku 3 (bez formatowania)
+                document.getElementById('summary_table_exchange_rate').textContent = exchangeRate;
                 document.getElementById('exchange_rate_header').classList.remove('hidden');
                 document.getElementById('summary_table_exchange_rate').classList.remove('hidden');
             } else {
@@ -1117,11 +1139,27 @@ const SupplierDelivery = {
             elements.summaryElements.productClass.value = elements.formFields.productClass.value;
             elements.summaryElements.currency.value = elements.formFields.currency.value;
             
-            // Formatuj kurs wymiany
+            // Pobierz dokładnie tę samą wartość kursu wymiany, bez formatowania czy przekształceń
+            const currency = elements.formFields.currency.value;
             const exchangeRate = elements.formFields.exchangeRate.value;
-            if (exchangeRate) {
-                elements.summaryElements.exchangeRate.value = SupplierDelivery.utils.formatExchangeRate(exchangeRate);
+            
+            console.log('Przenoszę kurs z kroku 1 do kroku 3. Wartość:', exchangeRate);
+            
+            // Jeśli waluta to EUR, zawsze pokazuj pole kursu i ustawiaj jego wartość
+            if (currency === 'EUR') {
+                // Pokaż kontener pola kursu EUR
+                if (elements.containers.summaryExchangeRate) {
+                    elements.containers.summaryExchangeRate.classList.remove('hidden');
+                }
+                
+                // Ustaw dokładnie tę samą wartość, bez modyfikacji
+                elements.summaryElements.exchangeRate.value = exchangeRate;
+                console.log('Ustawiono kurs EUR w kroku 3:', exchangeRate);
             } else {
+                // Ukryj pole kursu EUR dla innych walut
+                if (elements.containers.summaryExchangeRate) {
+                    elements.containers.summaryExchangeRate.classList.add('hidden');
+                }
                 elements.summaryElements.exchangeRate.value = '';
             }
             
@@ -1279,7 +1317,9 @@ const SupplierDelivery = {
                             other_category: document.getElementById('other_category').value,
                             product_class: document.getElementById('product_class').value,
                             currency: document.getElementById('currency').value,
-                            exchange_rate: document.getElementById('exchange_rate').value,
+                            exchange_rate: document.getElementById('currency').value === 'EUR' ? 
+                                document.getElementById('summary_exchange_rate').value : 
+                                null,
                             vat_rate: document.querySelector('input[name="vat_rate"]:checked')?.value,
                             price_type: document.querySelector('input[name="price_type"]:checked')?.value,
                             value_percentage: document.getElementById('value_percentage').value,
@@ -1445,11 +1485,27 @@ const SupplierDelivery = {
             elements.summaryElements.productClass.value = elements.formFields.productClass.value;
             elements.summaryElements.currency.value = elements.formFields.currency.value;
             
-            // Formatuj kurs wymiany
+            // Pobierz dokładnie tę samą wartość kursu wymiany, bez formatowania czy przekształceń
+            const currency = elements.formFields.currency.value;
             const exchangeRate = elements.formFields.exchangeRate.value;
-            if (exchangeRate) {
-                elements.summaryElements.exchangeRate.value = SupplierDelivery.utils.formatExchangeRate(exchangeRate);
+            
+            console.log('Przenoszę kurs z kroku 1 do kroku 3. Wartość:', exchangeRate);
+            
+            // Jeśli waluta to EUR, zawsze pokazuj pole kursu i ustawiaj jego wartość
+            if (currency === 'EUR') {
+                // Pokaż kontener pola kursu EUR
+                if (elements.containers.summaryExchangeRate) {
+                    elements.containers.summaryExchangeRate.classList.remove('hidden');
+                }
+                
+                // Ustaw dokładnie tę samą wartość, bez modyfikacji
+                elements.summaryElements.exchangeRate.value = exchangeRate;
+                console.log('Ustawiono kurs EUR w kroku 3:', exchangeRate);
             } else {
+                // Ukryj pole kursu EUR dla innych walut
+                if (elements.containers.summaryExchangeRate) {
+                    elements.containers.summaryExchangeRate.classList.add('hidden');
+                }
                 elements.summaryElements.exchangeRate.value = '';
             }
             

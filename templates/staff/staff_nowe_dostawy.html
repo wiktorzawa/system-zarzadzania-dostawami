@@ -1,0 +1,575 @@
+{% extends "staff/staff_base.html" %}
+{% block title %}Nowe Dostawy{% endblock %}
+
+{% block staff_content %}
+<section class="bg-gray-50 dark:bg-gray-900 py-3 sm:py-5">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+      <!-- Start coding here -->
+      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+          <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4 border-b dark:border-gray-700">
+              <div class="w-full flex items-center space-x-3">
+                  <h5 class="dark:text-white font-semibold">Nowe dostawy</h5>
+                  <div class="text-gray-400 font-medium">{{ deliveries.total }}</div>
+                  <div data-tooltip-target="results-tooltip">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" viewbox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                      </svg>
+                      <span class="sr-only">Więcej informacji</span>
+                  </div>
+                  <div id="results-tooltip" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                      Wyświetlanie {{ deliveries.page * deliveries.per_page - deliveries.per_page + 1 }}-{{ (deliveries.page * deliveries.per_page) if (deliveries.page * deliveries.per_page) < deliveries.total else deliveries.total }} z {{ deliveries.total }} wyników
+                      <div class="tooltip-arrow" data-popper-arrow=""></div>
+                  </div>
+              </div>
+              <div class="w-full flex flex-row items-center justify-end space-x-3">
+                  <a href="{{ url_for('staff.staff_dostawa_raport') }}" class="w-full md:w-auto flex items-center justify-center text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-3 py-2 dark:bg-purple-600 dark:hover:bg-purple-700 focus:outline-none dark:focus:ring-purple-800">
+                      <svg class="h-3.5 w-3.5 mr-2" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
+                      </svg>
+                      Generuj raport
+                  </a>
+                  <button type="button" class="w-full md:w-auto flex items-center justify-center py-2 px-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-purple-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      <svg class="mr-2 w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" viewbox="0 0 12 13" aria-hidden="true">
+                          <path d="M1 2V1h10v3H1V2Zm0 4h5v6H1V6Zm8 0h2v6H9V6Z" />
+                      </svg>
+                      Zarządzaj kolumnami
+                  </button>
+              </div>
+          </div>
+          <div class="flex flex-col-reverse md:flex-row items-start md:items-center justify-between md:space-x-4 p-4 border-b dark:border-gray-700">
+              <div class="mt-3 md:mt-0">
+                  <button id="actionsDropdownButton" data-dropdown-toggle="actionsDropdown" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-purple-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                      <svg class="-ml-1 mr-1.5 w-5 h-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path clip-rule="evenodd" fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                      </svg>
+                      Akcje
+                  </button>
+                  <div id="actionsDropdown" class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600">
+                      <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="actionsDropdownButton">
+                          <li>
+                              <a href="#" id="mark-processed" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Oznacz jako przetworzone</a>
+                          </li>
+                      </ul>
+                      <div class="py-1">
+                          <a href="#" id="export-excel" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Eksportuj do Excel</a>
+                      </div>
+                  </div>
+              </div>
+              <form id="filter-form" method="GET" action="{{ url_for('staff.staff_nowe_dostawy') }}" class="grid grid-cols-1 md:grid-cols-4 w-full lg:w-2/3 md:gap-4">
+                  <input type="hidden" name="sort" id="sort-field" value="{{ request.args.get('sort', '') }}">
+                  <input type="hidden" name="direction" id="sort-direction" value="{{ request.args.get('direction', 'asc') }}">
+                  <div class="w-full">
+                      <label for="supplier" class="sr-only">Dostawca</label>
+                      <select id="supplier" name="supplier" class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                          <option value="">Dostawca</option>
+                          {% for supplier in suppliers %}
+                          <option value="{{ supplier.id_supplier }}" {% if request.args.get('supplier')|string == supplier.id_supplier|string %}selected{% endif %}>{{ supplier.company_name }}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                  <div class="w-full">
+                      <label for="date" class="sr-only">Data dostawy</label>
+                      <select id="date" name="date" class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                          <option value="">Data dostawy</option>
+                          <option value="today">Dzisiaj</option>
+                          <option value="yesterday">Wczoraj</option>
+                          <option value="week">Ostatni tydzień</option>
+                          <option value="month">Ostatni miesiąc</option>
+                      </select>
+                  </div>
+                  <div class="w-full">
+                      <label for="category" class="sr-only">Kategoria</label>
+                      <select id="category" name="category" class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                          <option value="">Kategoria</option>
+                          <option value="MIX">MIX</option>
+                          <option value="Elektronika">Elektronika</option>
+                          <option value="AGD">AGD</option>
+                          <option value="Meble">Meble</option>
+                          <option value="Ogród">Ogród</option>
+                      </select>
+                  </div>
+                  <div class="w-full">
+                      <label for="status" class="sr-only">Status</label>
+                      <select id="status" name="status" class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer">
+                          <option value="">Status</option>
+                          <option value="pending_verification">Do weryfikacji</option>
+                          <option value="new">Nowe</option>
+                          <option value="processing">W przetwarzaniu</option>
+                          <option value="completed">Zakończone</option>
+                      </select>
+                  </div>
+              </form>
+          </div>
+          <div class="overflow-x-auto">
+              <div class="relative overflow-x-auto shadow-md sm:rounded-lg mt-4">
+                  <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                      <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+                          <tr>
+                              <th scope="col" class="p-4">
+                                  <div class="flex items-center">
+                                      <input id="checkbox-all" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                      <label for="checkbox-all" class="sr-only">checkbox</label>
+                                  </div>
+                              </th>
+                              <th scope="col" class="px-3 py-3 w-10"></th>
+                              <th scope="col" class="px-3 py-3">ID Dostawy</th>
+                              <th scope="col" class="px-3 py-3">Dostawca</th>
+                              <th scope="col" class="px-3 py-3">Numer LOT</th>
+                              <th scope="col" class="px-3 py-3">Kategoria dostawy</th>
+                              <th scope="col" class="px-3 py-3">Klasa produktów</th>
+                              <th scope="col" class="px-3 py-3">Wartość rynkowa ze specyfikacji</th>
+                              <th scope="col" class="px-3 py-3">Cena za LOT BRUTTO PLN</th>
+                              <th scope="col" class="px-3 py-3">Data dostawy</th>
+                              <th scope="col" class="px-3 py-3">Status</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {% for delivery in deliveries.items %}
+                          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 accordion-header cursor-pointer"
+                              data-delivery-id="{{ delivery.id_delivery }}" aria-expanded="false">
+                              <td class="w-4 p-4">
+                                  <div class="flex items-center">
+                                      <input id="checkbox-{{ delivery.id_delivery }}" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                      <label for="checkbox-{{ delivery.id_delivery }}" class="sr-only">checkbox</label>
+                                  </div>
+                              </td>
+                              <td class="px-3 py-2 w-10">
+                                  <button type="button" class="toggle-accordion">
+                                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                      </svg>
+                                  </button>
+                              </td>
+                              <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">
+                                  {{ delivery.id_delivery }}
+                              </td>
+                              <td class="px-3 py-2">
+                                  {% set supplier_name = "Nieznany" %}
+                                  <!-- DEBUG: {{ delivery.id_supplier }} -->
+                                  {% if delivery.id_supplier in suppliers_dict %}
+                                      {% set supplier_name = suppliers_dict[delivery.id_supplier].company_name %}
+                                  {% endif %}
+                                  {{ supplier_name }}
+                              </td>
+                              <td class="px-3 py-2">
+                                  {{ delivery.lot_number if delivery.lot_number else "N/A" }}
+                              </td>
+                              <td class="px-3 py-2">
+                                  {{ delivery.delivery_category if delivery.delivery_category else "N/A" }}
+                              </td>
+                              <td class="px-3 py-2">
+                                  {{ delivery.product_class if delivery.product_class else "N/A" }}
+                              </td>
+                              <td class="px-3 py-2">
+                                  {{ delivery.total_value|format_currency(delivery.currency) if delivery.total_value else "N/A" }}
+                              </td>
+                              <td class="px-3 py-2">
+                                  {{ delivery.delivery_value|format_currency('PLN') if delivery.delivery_value else "N/A" }}
+                              </td>
+                              <td class="px-3 py-2">
+                                  {{ delivery.delivery_date.strftime('%d-%m-%Y') if delivery.delivery_date else "N/A" }}
+                              </td>
+                              <td class="px-3 py-2">
+                                  <span class="{% if delivery.status == 'new' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300{% elif delivery.status == 'pending_verification' %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300{% elif delivery.status == 'processing' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300{% elif delivery.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %} text-xs font-medium px-2.5 py-0.5 rounded">
+                                  {% if delivery.status == 'new' %}
+                                      Nowa
+                                  {% elif delivery.status == 'pending_verification' %}
+                                      Do weryfikacji
+                                  {% elif delivery.status == 'processing' %}
+                                      W przetwarzaniu
+                                  {% elif delivery.status == 'completed' %}
+                                      Zakończona
+                                  {% else %}
+                                      {{ delivery.status }}
+                                  {% endif %}
+                              </span>
+                          </tr>
+                          <!-- Szczegóły dostawy - rozwijane -->
+                          <tr class="accordion-body hidden" id="accordion-body-{{ delivery.id_delivery }}">
+                              <td colspan="11" class="p-4">
+                                  <!-- Tytuł szczegółów dostawy -->
+                                  <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                                      SZCZEGÓŁY DOSTAWY {{ delivery.id_delivery }} {{ delivery.delivery_category|upper if delivery.delivery_category else "" }} Z DNIA {{ delivery.delivery_date.strftime('%d-%m-%Y') if delivery.delivery_date else "N/A" }}
+                                  </h2>
+                                  
+                                  <div class="grid grid-cols-3 gap-4 mb-4">
+                                      <!-- Ogólne informacje o dostawie -->
+                                      <div class="p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
+                                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">OGÓLNE INFORMACJE O DOSTAWIE</h3>
+                                          <ul class="space-y-2">
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Nazwa dostawcy:</span>
+                                                  <span>
+                                                      {% if delivery.id_supplier in suppliers_dict %}
+                                                          {{ suppliers_dict[delivery.id_supplier].company_name }}
+                                                      {% else %}
+                                                          Nieznany
+                                                      {% endif %}
+                                                  </span>
+                                              </li>
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Numer LOT:</span>
+                                                  <span>{{ delivery.lot_number if delivery.lot_number else "N/A" }}</span>
+                                              </li>
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Numery palet:</span>
+                                                  <span>{{ delivery.pallet_number if delivery.pallet_number else "N/A" }}</span>
+                                              </li>
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Kategoria dostawy:</span>
+                                                  <span>{{ delivery.delivery_category if delivery.delivery_category else "N/A" }}</span>
+                                              </li>
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Klasa produktów:</span>
+                                                  <span>{{ delivery.product_class if delivery.product_class else "N/A" }}</span>
+                                              </li>
+                                          </ul>
+                                      </div>
+                                      
+                                      <!-- Oferta dostawcy - informacje finansowe -->
+                                      <div class="p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
+                                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">OFERTA DOSTAWCY - INFORMACJE FINANSOWE</h3>
+                                          <ul class="space-y-2">
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Wartość rynkowa ze specyfikacji:</span>
+                                                  <span>{{ delivery.total_value|format_currency(delivery.currency) if delivery.total_value else "N/A" }}</span>
+                                              </li>
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Wartość rynkowa w PLN:</span>
+                                                  <span>{{ delivery.total_value_pln|format_currency('PLN') if delivery.total_value_pln else "N/A" }}</span>
+                                              </li>
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Cena za LOT BRUTTO PLN:</span>
+                                                  <span>{{ delivery.delivery_value|format_currency('PLN') if delivery.delivery_value else "N/A" }}</span>
+                                              </li>
+                                          </ul>
+                                      </div>
+                                      
+                                      <!-- Szczegóły finansowe dostawy -->
+                                      <div class="p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
+                                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">SZCZEGÓŁY FINANSOWE DOSTAWY</h3>
+                                          <ul class="space-y-2">
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Waluta:</span>
+                                                  <span>{{ delivery.currency if delivery.currency else "N/A" }}</span>
+                                              </li>
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Kurs EUR:</span>
+                                                  <span>{{ delivery.exchange_rate if delivery.exchange_rate else "N/A" }}</span>
+                                              </li>
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Procent wartości:</span>
+                                                  <span>{{ delivery.value_percentage }}%</span>
+                                              </li>
+                                              <li class="flex items-center">
+                                                  <span class="font-medium mr-2">Stawka VAT:</span>
+                                                  <span>{{ delivery.vat_rate if delivery.vat_rate else "N/A" }}%</span>
+                                              </li>
+                                          </ul>
+                                      </div>
+                                  </div>
+                                  
+                                  <!-- Produkty w dostawie -->
+                                  <div class="p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700 mb-4">
+                                      <div class="flex justify-between items-center mb-3">
+                                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">PRODUKTY W DOSTAWIE</h3>
+                                          <button type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" 
+                                                  onclick="openProductsModal('{{ delivery.id_delivery }}')">
+                                              Zobacz wszystkie produkty
+                                          </button>
+                                      </div>
+                                      
+                                      <!-- Tabela z produktami (5 pierwszych) -->
+                                      <div class="relative overflow-x-auto">
+                                          <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                              <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                                  <tr>
+                                                      <th scope="col" class="px-3 py-2">NR LOT</th>
+                                                      <th scope="col" class="px-3 py-2">NR PALETY</th>
+                                                      <th scope="col" class="px-3 py-2">ITEM DESC</th>
+                                                      <th scope="col" class="px-3 py-2">EAN</th>
+                                                      <th scope="col" class="px-3 py-2">ASIN</th>
+                                                      <th scope="col" class="px-3 py-2">KRAJ</th>
+                                                      <th scope="col" class="px-3 py-2">ILOŚĆ</th>
+                                                      <th scope="col" class="px-3 py-2">WARTOŚĆ</th>
+                                                  </tr>
+                                              </thead>
+                                              <tbody>
+                                                  {% set products = delivery.products if delivery.products is defined else [] %}
+                                                  {% for product in products[:5] %}
+                                                  <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                                      <td class="px-3 py-2">{{ product.lot_number }}</td>
+                                                      <td class="px-3 py-2">{{ product.pallet_number }}</td>
+                                                      <td class="px-3 py-2">{{ product.product_name }}</td>
+                                                      <td class="px-3 py-2">{{ product.ean_code }}</td>
+                                                      <td class="px-3 py-2">{{ product.asin_code }}</td>
+                                                      <td class="px-3 py-2">{{ product.country if product.country is defined else "N/A" }}</td>
+                                                      <td class="px-3 py-2">{{ product.quantity }} {{ product.unit }}</td>
+                                                      <td class="px-3 py-2">{{ product.value|format_currency(product.currency if product.currency else delivery.currency) }}</td>
+                                                  </tr>
+                                                  {% else %}
+                                                  <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                                      <td colspan="8" class="px-3 py-4 text-center">Brak produktów</td>
+                                                  </tr>
+                                                  {% endfor %}
+                                              </tbody>
+                                          </table>
+                                      </div>
+                                  </div>
+                                  
+                                  <!-- Przyciski funkcyjne -->
+                                  <div class="grid grid-cols-5 gap-4">
+                                      <button type="button" class="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800">
+                                          Zatwierdź dostawę
+                                      </button>
+                                      <button type="button" class="text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-yellow-600 dark:hover:bg-yellow-700 focus:outline-none dark:focus:ring-yellow-800">
+                                          Edytuj dane
+                                      </button>
+                                      <button type="button" class="text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700 focus:outline-none dark:focus:ring-purple-800">
+                                          Generuj raport
+                                      </button>
+                                      <button type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                                          Eksportuj dane
+                                      </button>
+                                      <button type="button" class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-red-600 dark:hover:bg-red-700 focus:outline-none dark:focus:ring-red-800">
+                                          Odrzuć dostawę
+                                      </button>
+                                  </div>
+                              </td>
+                          </tr>
+                          {% else %}
+                          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                              <td colspan="11" class="px-3 py-4 text-center font-medium">Brak dostaw spełniających kryteria wyszukiwania</td>
+                          </tr>
+                          {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
+      <!-- Pagination -->
+      <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4"
+          aria-label="Table navigation">
+          <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
+              Wyświetlanie
+              <span class="font-semibold text-gray-900 dark:text-white">
+                  {{ deliveries.page * deliveries.per_page - deliveries.per_page + 1 }}-{{ (deliveries.page * deliveries.per_page) if (deliveries.page * deliveries.per_page) < deliveries.total else deliveries.total }}
+              </span>
+              z
+              <span class="font-semibold text-gray-900 dark:text-white">{{ deliveries.total }}</span>
+          </span>
+          <ul class="inline-flex items-stretch -space-x-px">
+              <li>
+                  <a href="{{ url_for('staff.staff_nowe_dostawy', page=deliveries.prev_num) if deliveries.has_prev else '#' }}"
+                      class="{{ 'pointer-events-none opacity-50' if not deliveries.has_prev }} flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                      <span class="sr-only">Poprzednia</span>
+                      <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <path fill-rule="evenodd"
+                              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                              clip-rule="evenodd" />
+                      </svg>
+                  </a>
+              </li>
+              {% for page_num in deliveries.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+              {% if page_num %}
+              <li>
+                  <a href="{{ url_for('staff.staff_nowe_dostawy', page=page_num) }}"
+                      class="flex items-center justify-center text-sm py-2 px-3 leading-tight {{ 'text-purple-600 bg-purple-50 border border-purple-300 hover:bg-purple-100 hover:text-purple-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white' if page_num == deliveries.page else 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white' }}">
+                      {{ page_num }}
+                  </a>
+              </li>
+              {% else %}
+              <li>
+                  <span
+                      class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
+                      ...
+                  </span>
+              </li>
+              {% endif %}
+              {% endfor %}
+              <li>
+                  <a href="{{ url_for('staff.staff_nowe_dostawy', page=deliveries.next_num) if deliveries.has_next else '#' }}"
+                      class="{{ 'pointer-events-none opacity-50' if not deliveries.has_next }} flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                      <span class="sr-only">Następna</span>
+                      <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <path fill-rule="evenodd"
+                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                              clip-rule="evenodd" />
+                      </svg>
+                  </a>
+              </li>
+          </ul>
+      </nav>
+  </div>
+</section>
+
+<!-- Modal dla wyświetlania wszystkich produktów -->
+<div id="productsModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative w-full max-w-6xl max-h-full">
+        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+            <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    Wszystkie produkty z dostawy <span id="modalDeliveryId"></span>
+                </h3>
+                <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="productsModal">
+                    <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                    <span class="sr-only">Zamknij modal</span>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                            <tr>
+                                <th scope="col" class="px-3 py-2">NR LOT</th>
+                                <th scope="col" class="px-3 py-2">NR PALETY</th>
+                                <th scope="col" class="px-3 py-2">ITEM DESC</th>
+                                <th scope="col" class="px-3 py-2">EAN</th>
+                                <th scope="col" class="px-3 py-2">ASIN</th>
+                                <th scope="col" class="px-3 py-2">KRAJ</th>
+                                <th scope="col" class="px-3 py-2">ILOŚĆ</th>
+                                <th scope="col" class="px-3 py-2">WARTOŚĆ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalProductsBody">
+                            <!-- Tu zostaną wstawione produkty przez JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
+                <button data-modal-hide="productsModal" type="button" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">Zamknij</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Skrypt do obsługi rozwijania wierszy -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const accordionHeaders = document.querySelectorAll('.accordion-header');
+        
+        accordionHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const deliveryId = this.getAttribute('data-delivery-id');
+                const targetBody = document.getElementById('accordion-body-' + deliveryId);
+                const expanded = this.getAttribute('aria-expanded') === 'true';
+                
+                // Zmień stan aktualnego elementu
+                this.setAttribute('aria-expanded', !expanded);
+                if (!expanded) {
+                    targetBody.classList.remove('hidden');
+                    targetBody.style.display = 'table-row';
+                } else {
+                    targetBody.classList.add('hidden');
+                    targetBody.style.display = 'none';
+                }
+                
+                // Obróć ikonę
+                const toggleIcon = this.querySelector('.toggle-accordion svg');
+                if (toggleIcon) {
+                    if (!expanded) {
+                        toggleIcon.style.transform = 'rotate(180deg)';
+                    } else {
+                        toggleIcon.style.transform = 'rotate(0)';
+                    }
+                }
+            });
+        });
+    });
+</script>
+
+<!-- Dodaj skrypt do obsługi modala z produktami -->
+<script>
+    function openProductsModal(deliveryId) {
+        const modal = document.getElementById('productsModal');
+        const modalDeliveryId = document.getElementById('modalDeliveryId');
+        const modalProductsBody = document.getElementById('modalProductsBody');
+        
+        modalDeliveryId.textContent = deliveryId;
+        
+        // Tutaj będziemy ładować produkty z API
+        fetch(`/staff/api/delivery/${deliveryId}/products`)
+            .then(response => response.json())
+            .then(data => {
+                modalProductsBody.innerHTML = '';
+                
+                if (data.products && data.products.length > 0) {
+                    data.products.forEach(product => {
+                        const row = document.createElement('tr');
+                        row.className = 'bg-white border-b dark:bg-gray-800 dark:border-gray-700';
+                        
+                        row.innerHTML = `
+                            <td class="px-3 py-2">${product.lot_number || 'N/A'}</td>
+                            <td class="px-3 py-2">${product.pallet_number || 'N/A'}</td>
+                            <td class="px-3 py-2">${product.product_name || 'N/A'}</td>
+                            <td class="px-3 py-2">${product.ean_code || 'N/A'}</td>
+                            <td class="px-3 py-2">${product.asin_code || 'N/A'}</td>
+                            <td class="px-3 py-2">${product.country || 'N/A'}</td>
+                            <td class="px-3 py-2">${product.quantity} ${product.unit || ''}</td>
+                            <td class="px-3 py-2">${product.value || 'N/A'} ${product.currency || ''}</td>
+                        `;
+                        
+                        modalProductsBody.appendChild(row);
+                    });
+                } else {
+                    modalProductsBody.innerHTML = `
+                        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                            <td colspan="8" class="px-3 py-4 text-center">Brak produktów dla tej dostawy</td>
+                        </tr>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Błąd podczas pobierania produktów:', error);
+                modalProductsBody.innerHTML = `
+                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                        <td colspan="8" class="px-3 py-4 text-center">Wystąpił błąd podczas pobierania produktów</td>
+                    </tr>
+                `;
+            });
+        
+        // Otwórz modal
+        if (typeof flowbite !== 'undefined') {
+            const modalElement = document.getElementById('productsModal');
+            const modalOptions = {
+                placement: 'center',
+                backdrop: 'dynamic',
+                backdropClasses: 'bg-gray-900 bg-opacity-50 dark:bg-opacity-80 fixed inset-0 z-40'
+            };
+            
+            if (!flowbite.Modal.getInstance(modalElement)) {
+                const modal = new flowbite.Modal(modalElement, modalOptions);
+                modal.show();
+            } else {
+                const modal = flowbite.Modal.getInstance(modalElement);
+                modal.show();
+            }
+        } else {
+            modal.classList.remove('hidden');
+        }
+    }
+    
+    // Obsługa zamykania modala
+    document.addEventListener('DOMContentLoaded', function() {
+        const closeButtons = document.querySelectorAll('[data-modal-hide="productsModal"]');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const modal = document.getElementById('productsModal');
+                if (typeof flowbite !== 'undefined') {
+                    const modalInstance = flowbite.Modal.getInstance(modal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    } else {
+                        modal.classList.add('hidden');
+                    }
+                } else {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %} 
