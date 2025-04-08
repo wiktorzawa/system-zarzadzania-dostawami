@@ -1,50 +1,252 @@
 {% extends "staff/staff_base.html" %}
 
+{% block title %}Dashboard{% endblock %}
+
 {% block staff_content %}
-<div class="grid grid-cols-3 gap-4 mb-4">
-    <div class="flex items-center justify-center h-24 rounded bg-gray-50 dark:bg-gray-800">
-        <p class="text-2xl text-gray-400 dark:text-gray-500">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-            </svg>
-        </p>
+<!-- Statystyki -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+    <!-- Nowe produkty -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 sm:p-6 xl:p-8">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <span class="text-2xl sm:text-3xl leading-none font-bold text-gray-900 dark:text-white">{{ new_products }}</span>
+                <h3 class="text-base font-normal text-gray-500 dark:text-gray-400">Nowe produkty dzisiaj</h3>
+            </div>
+        </div>
     </div>
-    <div class="flex items-center justify-center h-24 rounded bg-gray-50 dark:bg-gray-800">
-        <p class="text-2xl text-gray-400 dark:text-gray-500">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-            </svg>
-        </p>
+    
+    <!-- Wszystkie produkty -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 sm:p-6 xl:p-8">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <span class="text-2xl sm:text-3xl leading-none font-bold text-gray-900 dark:text-white">{{ total_products }}</span>
+                <h3 class="text-base font-normal text-gray-500 dark:text-gray-400">Wszystkie produkty</h3>
+            </div>
+        </div>
     </div>
-    <div class="flex items-center justify-center h-24 rounded bg-gray-50 dark:bg-gray-800">
-        <p class="text-2xl text-gray-400 dark:text-gray-500">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-            </svg>
-        </p>
+    
+    <!-- Wartość dostaw -->
+    {% for value, currency in delivery_values %}
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 sm:p-6 xl:p-8">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <span class="text-2xl sm:text-3xl leading-none font-bold text-gray-900 dark:text-white">{{ "%.2f"|format(value|float) }}</span>
+                <h3 class="text-base font-normal text-gray-500 dark:text-gray-400">Wartość dostaw ({{ currency }})</h3>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Wykres dzienny -->
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 sm:p-6 xl:p-8 mb-4">
+    <div class="mb-4 flex items-center justify-between">
+        <div>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Produkty w dostawach</h3>
+            <span class="text-base font-normal text-gray-500 dark:text-gray-400">Ostatnie 7 dni</span>
+        </div>
+    </div>
+    <div id="daily-products-chart"></div>
+</div>
+
+<!-- Wykresy statusów i top produktów -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+    <!-- Wykres statusów -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 sm:p-6 xl:p-8">
+        <div class="mb-4">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Status dostaw</h3>
+            <span class="text-base font-normal text-gray-500 dark:text-gray-400">Podział według statusu</span>
+        </div>
+        <div id="product-status-chart"></div>
+    </div>
+    
+    <!-- Top 5 produktów -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 sm:p-6 xl:p-8">
+        <div class="mb-4">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Najdroższe produkty</h3>
+            <span class="text-base font-normal text-gray-500 dark:text-gray-400">Top 5 według ceny</span>
+        </div>
+        <div class="flex flex-col mt-8">
+            <div class="overflow-x-auto rounded-lg">
+                <div class="align-middle inline-block min-w-full">
+                    <div class="overflow-hidden sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th scope="col" class="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Produkt
+                                    </th>
+                                    <th scope="col" class="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Cena
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800">
+                                {% for product in top_products %}
+                                <tr class="border-b dark:border-gray-700">
+                                    <td class="p-4 whitespace-nowrap text-sm font-normal text-gray-900 dark:text-white">
+                                        {{ product.product_name }}
+                                    </td>
+                                    <td class="p-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                                        {{ "%.2f"|format(product.price|float) }} {{ product.currency }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-<div class="flex items-center justify-center h-48 mb-4 rounded bg-gray-50 dark:bg-gray-800">
-    <p class="text-2xl text-gray-400 dark:text-gray-500">
-        <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-        </svg>
-    </p>
-</div>
-<div class="grid grid-cols-2 gap-4 mb-4">
-    <div class="flex items-center justify-center rounded bg-gray-50 h-28 dark:bg-gray-800">
-        <p class="text-2xl text-gray-400 dark:text-gray-500">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-            </svg>
-        </p>
-    </div>
-    <div class="flex items-center justify-center rounded bg-gray-50 h-28 dark:bg-gray-800">
-        <p class="text-2xl text-gray-400 dark:text-gray-500">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-            </svg>
-        </p>
-    </div>
-</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Formatowanie dat
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('pl-PL', { 
+            day: '2-digit',
+            month: '2-digit'
+        });
+    }
+
+    // Wykres dzienny
+    var dailyOptions = {
+        series: [{
+            name: 'Produkty',
+            data: [{% for date in dates %}{{ daily_counts[date]|default(0) }},{% endfor %}]
+        }],
+        chart: {
+            type: 'area',
+            height: 350,
+            toolbar: {
+                show: false
+            },
+            zoom: {
+                enabled: false
+            },
+            background: 'transparent'
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 3
+        },
+        xaxis: {
+            categories: {{ dates|tojson }},
+            labels: {
+                formatter: function(value) {
+                    return formatDate(value);
+                },
+                style: {
+                    colors: '#64748b'
+                }
+            },
+            tooltip: {
+                enabled: false
+            }
+        },
+        yaxis: {
+            labels: {
+                formatter: function(value) {
+                    return Math.round(value);
+                },
+                style: {
+                    colors: '#64748b'
+                }
+            }
+        },
+        tooltip: {
+            theme: 'dark',
+            x: {
+                formatter: function(value, { series, seriesIndex, dataPointIndex }) {
+                    return formatDate(value);
+                }
+            }
+        },
+        colors: ['#3b82f6'],
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.7,
+                opacityTo: 0.2,
+                stops: [0, 90, 100]
+            }
+        }
+    };
+
+    // Wykres statusów
+    var statusOptions = {
+        series: [{% for status, count in product_statuses %}{{ count }},{% endfor %}],
+        chart: {
+            type: 'donut',
+            height: 350,
+            background: 'transparent'
+        },
+        labels: [{% for status, count in product_statuses %}
+            {% if status == 'pending_verification' %}'Oczekujące na weryfikację'
+            {% elif status == 'processing' %}'W trakcie weryfikacji'
+            {% elif status == 'completed' %}'Zakończone'
+            {% elif status == 'rejected' %}'Odrzucone'
+            {% elif status == 'new' %}'Nowe'
+            {% else %}'{{ status }}'{% endif %},
+        {% endfor %}],
+        colors: ['#6366f1', '#3b82f6', '#10b981', '#ef4444', '#f59e0b'],
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            labels: {
+                colors: '#64748b'
+            },
+            markers: {
+                width: 8,
+                height: 8,
+                radius: 4
+            },
+            itemMargin: {
+                horizontal: 10,
+                vertical: 5
+            }
+        },
+        tooltip: {
+            theme: 'dark',
+            y: {
+                formatter: function(value) {
+                    return value + ' dostaw';
+                }
+            }
+        },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '70%',
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            label: 'Łącznie',
+                            formatter: function(w) {
+                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0) + ' dostaw';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var dailyChart = new ApexCharts(document.querySelector("#daily-products-chart"), dailyOptions);
+        dailyChart.render();
+
+        var statusChart = new ApexCharts(document.querySelector("#product-status-chart"), statusOptions);
+        statusChart.render();
+    });
+</script>
 {% endblock %} 

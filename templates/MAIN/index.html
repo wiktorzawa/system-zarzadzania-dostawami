@@ -74,7 +74,7 @@
 </section>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
 function submitForm(event) {
     event.preventDefault();
@@ -85,7 +85,19 @@ function submitForm(event) {
     }
     
     const role = selectedJob.value;
-    window.location.href = `/${role}/login`;
+    
+    // Mapowanie wartości z radio buttonów na odpowiednie ścieżki
+    const roleRoutes = {
+        'admin': '/admin/login',
+        'staff': '/staff/login',
+        'supplier': '/supplier/login'
+    };
+    
+    if (roleRoutes[role]) {
+        window.location.href = roleRoutes[role];
+    } else {
+        alert('Nieprawidłowy wybór roli');
+    }
 }
 
 document.querySelectorAll('input[name="job"]').forEach(radio => {

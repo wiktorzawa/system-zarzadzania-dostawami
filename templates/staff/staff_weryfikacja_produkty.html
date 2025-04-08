@@ -1,0 +1,1274 @@
+{% extends "staff/staff_base.html" %}
+{% block title %}Weryfikacja dostawy {{ delivery.id_delivery }} - NOWY PLIK{% endblock %}
+
+{% block staff_content %}
+<section class="bg-white dark:bg-gray-900">
+    <div class="py-8 px-4 mx-auto max-w-5xl lg:py-16">
+        <!-- Nagłówek -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    Weryfikacja dostawy {{ delivery.id_delivery }} - NOWY PLIK 
+                </h1>
+                <a href="{{ url_for('staff.staff_weryfikacja') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-arrow-left"></i> Powrót
+                </a>
+            </div>
+            
+            <!-- Informacje o dostawie -->
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Dostawca</h3>
+                    <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ supplier.company_name if supplier else 'Nieznany' }}</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Data dostawy</h3>
+                    <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ delivery.delivery_date.strftime('%d-%m-%Y') if delivery.delivery_date else 'N/A' }}</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Numer LOT</h3>
+                    <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ delivery.lot_number if delivery.lot_number else 'N/A' }}</p>
+                </div>
+            </div>
+            
+            <div class="mt-4 flex flex-wrap gap-2">
+                <button id="consolidateDuplicatesBtn" type="button" class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    <i class="fas fa-object-group mr-2"></i>Konsoliduj duplikaty ASIN
+                </button>
+                <button id="undoConsolidationBtn" type="button" class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-red-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    <i class="fas fa-undo mr-2"></i>Cofnij konsolidację
+                </button>
+            </div>
+        </div>
+
+        <!-- Formularz weryfikacji - Nowy styl z Flowbite -->
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-8">
+            <!-- Modal komunikatu konsolidacji -->
+            <div id="consolidationModal" 
+                 data-modal-target="consolidationModal" 
+                 data-modal-backdrop="static" 
+                 tabindex="-1" 
+                 role="dialog"
+                 aria-labelledby="modalTitle"
+                 class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full justify-center items-center">
+                <div class="relative w-full max-w-md max-h-full">
+                    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                            <h3 id="modalTitle" class="text-xl font-medium text-gray-900 dark:text-white">
+                                Konsolidacja duplikatów
+                            </h3>
+                            <button type="button" 
+                                    data-modal-toggle="consolidationModal" 
+                                    class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                                    aria-label="Zamknij">
+                                <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="p-4 md:p-5">
+                            <p id="consolidationMessage" class="text-base leading-relaxed text-gray-500 dark:text-gray-400"></p>
+                            <div class="mt-4">
+                                <button type="button" 
+                                        data-modal-toggle="consolidationModal" 
+                                        id="modalCloseButton" 
+                                        class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                    OK
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="verificationForm">
+                <input type="hidden" id="verificationId">
+                
+                <!-- Wyszukiwanie produktu -->
+                <div class="mb-6">
+                    <label for="productSearch" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Szukaj produktu (EAN, ASIN, nazwa)</label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-grow">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <input type="search" id="productSearch" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Wpisz EAN, ASIN lub fragment nazwy produktu...">
+                        </div>
+                        <button id="searchButton" type="button" class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-900">
+                            <i class="fas fa-search mr-2"></i>Szukaj
+                        </button>
+                    </div>
+                    <div id="searchResults" class="mt-4 hidden">
+                        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+                                        <tr>
+                                            <th scope="col" class="px-3 py-3">Nazwa produktu</th>
+                                            <th scope="col" class="px-3 py-3">EAN</th>
+                                            <th scope="col" class="px-3 py-3">ASIN</th>
+                                            <th scope="col" class="px-3 py-3">Ilość</th>
+                                            <th scope="col" class="px-3 py-3">Cena</th>
+                                            <th scope="col" class="px-3 py-3">Wartość</th>
+                                            <th scope="col" class="px-3 py-3">Numer palety</th>
+                                            <th scope="col" class="px-3 py-3">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="searchResultsBody">
+                                        <!-- Tu będą wyniki wyszukiwania -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="create-product-accordion-collapse" data-accordion="collapse">
+                    <h2 id="create-product-accordion-collapse-heading-1">
+                        <button type="button" class="flex justify-between items-center py-4 px-4 w-full font-medium leading-none text-left text-gray-900 bg-gray-50 sm:px-5 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-800 dark:border-gray-700 dark:text-white hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600" data-accordion-target="#create-product-accordion-collapse-body-1" aria-expanded="true" aria-controls="create-product-accordion-collapse-body-1">
+                            <span>Informacje o weryfikacji</span>
+                            <svg data-accordion-icon="" class="w-6 h-6 rotate-180 shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    </h2>
+                    <div id="create-product-accordion-collapse-body-1" class="" aria-labelledby="create-product-accordion-collapse-heading-1">
+                        <div class="py-4 border-gray-200 sm:py-5 dark:border-gray-700">
+                            <!-- Inputs -->
+                            <div class="grid gap-4 md:gap-6 md:grid-cols-2">
+                                <!-- Pierwsza kolumna -->
+                                <div class="space-y-4 sm:space-y-6">
+                                    <!-- Status weryfikacji -->
+                                    <div>
+                                        <label for="verificationStatus" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Status weryfikacji</label>
+                                        <select id="verificationStatus" name="verification_status" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                            <option value="completed">Zaakceptuj</option>
+                                            <option value="rejected">Odrzuć</option>
+                                            <option value="needs_correction">Wymaga korekty</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Ilość i cena -->
+                                    <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+                                        <div class="w-full">
+                                            <label for="total_quantity_verified" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ilość zweryfikowana</label>
+                                            <input type="number" name="total_quantity_verified" id="total_quantity_verified" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Ilość" required>
+                                        </div>
+                                        <div class="w-full">
+                                            <label for="price_verified" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cena zweryfikowana</label>
+                                            <div class="relative">
+                                                <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+                                                    <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path></svg>
+                                                </div>
+                                                <input type="number" step="0.01" name="price_verified" id="price_verified" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="0.00" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Stan i rozmiar -->
+                                    <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+                                        <div class="w-full">
+                                            <label for="product_condition" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Stan produktu</label>
+                                            <select id="product_condition" name="product_condition" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                                <option value="A">A</option>
+                                                <option value="B">B</option>
+                                                <option value="C">C</option>
+                                                <option value="E">E</option>
+                                            </select>
+                                        </div>
+                                        <div class="w-full">
+                                            <label for="product_size" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Rozmiar</label>
+                                            <select id="product_size" name="product_size" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                                <option value="S">S</option>
+                                                <option value="M">M</option>
+                                                <option value="L">L</option>
+                                                <option value="XL">XL</option>
+                                                <option value="LONG">LONG</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Przeznaczenie -->
+                                    <div>
+                                        <label for="intended_use" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Przeznaczenie</label>
+                                        <select id="intended_use" name="intended_use" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                            <option value="mystery_box">Mystery Box</option>
+                                            <option value="detal">Detal</option>
+                                            <option value="zostaje_na_mag">Zostaje na magazynie</option>
+                                            <option value="brak">Brak</option>
+                                            <option value="nadwyzka">Nadwyżka</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Druga kolumna -->
+                                <div class="space-y-4 sm:space-y-6">
+                                    <!-- LPN i Paleta -->
+                                    <div class="space-y-4 sm:flex sm:space-x-4 sm:space-y-0">
+                                        <div class="w-full">
+                                            <label for="lpn_number" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Numer LPN</label>
+                                            <input type="text" name="lpn_number" id="lpn_number" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Numer LPN">
+                                        </div>
+                                        <div class="w-full">
+                                            <label for="pallet_number" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Numer palety</label>
+                                            <input type="text" name="pallet_number" id="pallet_number" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Numer palety">
+                                        </div>
+                                    </div>
+
+                                    <!-- Lokalizacja -->
+                                    <div>
+                                        <label for="location" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Lokalizacja</label>
+                                        <input type="text" name="location" id="location" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Lokalizacja magazynowa" required>
+                                    </div>
+
+                                    <!-- Notatki -->
+                                    <div>
+                                        <label for="verificationNotes" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Notatki</label>
+                                        <div class="mb-4 w-full bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                                            <div class="flex justify-between items-center py-2 px-3 border-b dark:border-gray-600">
+                                                <div class="flex flex-wrap items-center divide-gray-200 sm:divide-x dark:divide-gray-600">
+                                                    <div class="flex items-center space-x-1 sm:pr-4">
+                                                        <button type="button" class="p-2 text-gray-500 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600">
+                                                            <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clip-rule="evenodd"></path></svg>
+                                                            <span class="sr-only">Załącz plik</span>
+                                                        </button>
+                                                        <button type="button" class="p-2 text-gray-500 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600">
+                                                            <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
+                                                            <span class="sr-only">Wstaw lokalizację</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="py-2 px-4 bg-gray-50 rounded-b-lg dark:bg-gray-700">
+                                                <textarea id="verificationNotes" name="notes" rows="6" class="block px-0 w-full text-sm text-gray-800 bg-gray-50 border-0 dark:bg-gray-700 focus:ring-0 dark:text-white dark:placeholder-gray-400" placeholder="Wpisz notatki dotyczące weryfikacji produktu..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Zdjęcia produktu -->
+                                    <div>
+                                        <label for="product_images" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Zdjęcia produktu</label>
+                                        <div class="flex justify-center items-center w-full">
+                                            <label for="product_images" class="flex flex-col justify-center items-center w-full h-64 bg-gray-50 rounded-lg border-2 border-gray-300 border-dashed cursor-pointer dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500">
+                                                <div class="flex flex-col justify-center items-center pt-5 pb-6">
+                                                    <svg aria-hidden="true" class="mb-3 w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                                    <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">Kliknij aby przesłać</span> lub przeciągnij i upuść</p>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG lub JPEG (Max. 30MB)</p>
+                                                </div>
+                                                <input id="product_images" type="file" name="product_images" class="hidden" multiple accept="image/*" />
+                                            </label>
+                                        </div>
+                                        <div id="image_preview" class="mt-4 grid grid-cols-3 gap-4" style="display: none;">
+                                            <!-- Tutaj będą wyświetlane miniatury załadowanych zdjęć -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="inline-flex items-center px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center text-white bg-primary-700 rounded-lg focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-900 hover:bg-primary-800">
+                    Zapisz weryfikację
+                </button>
+            </form>
+        </div>
+
+        <!-- Tabela produktów -->
+        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden mb-8">
+            <!-- Filtrowanie kolumn -->
+            <div class="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Filtry tabeli</h3>
+                    <button type="button" onclick="resetFilters()" class="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center">
+                        <i class="fas fa-undo mr-1"></i> Resetuj filtry
+                    </button>
+                </div>
+                <div class="grid grid-cols-7 gap-4">
+                    <!-- Kolumna 1: Nazwa produktu -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-medium text-gray-700 dark:text-gray-400">Nazwa produktu</label>
+                            <button type="button" onclick="sortTable(0)" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-arrow-down-short-wide text-xs"></i>
+                            </button>
+                        </div>
+                        <input type="text" id="filter-name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Filtruj nazwę" onkeyup="filterColumn(0, this.value)">
+                    </div>
+                    
+                    <!-- Kolumna 2: EAN -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-medium text-gray-700 dark:text-gray-400">EAN</label>
+                            <button type="button" onclick="sortTable(1)" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-arrow-down-short-wide text-xs"></i>
+                            </button>
+                        </div>
+                        <input type="text" id="filter-ean" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Filtruj EAN" onkeyup="filterColumn(1, this.value)">
+                    </div>
+                    
+                    <!-- Kolumna 3: ASIN -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-medium text-gray-700 dark:text-gray-400">ASIN</label>
+                            <button type="button" onclick="sortTable(2)" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-arrow-down-short-wide text-xs"></i>
+                            </button>
+                        </div>
+                        <input type="text" id="filter-asin" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Filtruj ASIN" onkeyup="filterColumn(2, this.value)">
+                    </div>
+                    
+                    <!-- Kolumna 4: Ilość -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-medium text-gray-700 dark:text-gray-400">Ilość</label>
+                            <button type="button" onclick="sortTable(3)" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-arrow-down-short-wide text-xs"></i>
+                            </button>
+                        </div>
+                        <input type="number" id="filter-quantity" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Min. ilość" onkeyup="filterColumnNumeric(3, this.value)">
+                    </div>
+                    
+                    <!-- Kolumna 5: Cena -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-medium text-gray-700 dark:text-gray-400">Cena</label>
+                            <button type="button" onclick="sortTable(4)" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-arrow-down-short-wide text-xs"></i>
+                            </button>
+                        </div>
+                        <input type="number" id="filter-price" step="0.01" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Min. cena" onkeyup="filterColumnNumeric(4, this.value)">
+                    </div>
+                    
+                    <!-- Kolumna 6: Wartość -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-medium text-gray-700 dark:text-gray-400">Wartość</label>
+                            <button type="button" onclick="sortTable(5)" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-arrow-down-short-wide text-xs"></i>
+                            </button>
+                        </div>
+                        <input type="number" id="filter-value" step="0.01" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Min. wartość" onkeyup="filterColumnNumeric(5, this.value)">
+                    </div>
+                    
+                    <!-- Kolumna 7: Status -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-medium text-gray-700 dark:text-gray-400">Status</label>
+                            <button type="button" onclick="sortTable(6)" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-arrow-down-short-wide text-xs"></i>
+                            </button>
+                        </div>
+                        <select id="status-column-filter" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" onchange="filterColumn(6, this.value)">
+                            <option value="">Wszystkie statusy</option>
+                            <option value="zweryfikowany">Zweryfikowany</option>
+                            <option value="odrzucony">Odrzucony</option>
+                            <option value="oczekuje">Oczekuje na weryfikację</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Górna paginacja -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-700 dark:text-gray-400">
+                        Wyświetl
+                    </span>
+                    <select id="rowsPerPageTop" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="text-sm text-gray-700 dark:text-gray-400">
+                        wierszy
+                    </span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span id="paginationInfoTop" class="text-sm text-gray-700 dark:text-gray-400">
+                        Strona 1 z 1
+                    </span>
+                    <button id="prevPageTop" class="flex items-center justify-center px-3 h-8 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        Poprzednia
+                    </button>
+                    <button id="nextPageTop" class="flex items-center justify-center px-3 h-8 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        Następna
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative">
+                <!-- Tabela -->
+                <div class="overflow-x-auto">
+                    <table id="verifications-table" class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+                            <tr>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    ID Weryfikacji
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Nazwa produktu
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    EAN
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    ASIN
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Ilość
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Ilość zweryfikowana
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Cena
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Cena zweryfikowana
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Wartość
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Numer palety
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Numer LPN
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Rozmiar
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Stan
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Przeznaczenie
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Lokalizacja
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Status
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Data weryfikacji
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Zweryfikowane przez
+                                </th>
+                                <th scope="col" class="px-3 py-3 bg-gray-200 dark:bg-gray-600">
+                                    Notatki
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="verifications-table-body">
+                            {% for verification in verifications %}
+                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" data-verification-id="{{ verification.id_weryfikacja }}">
+                                <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">
+                                    {{ verification.id_weryfikacja }}
+                                </td>
+                                <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">
+                                    {{ verification.product_name }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.ean_code if verification.ean_code else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.asin_code if verification.asin_code else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.total_quantity }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.total_quantity_verified if verification.total_quantity_verified else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.price|format_currency(delivery.currency) if verification.price else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.price_verified|format_currency(delivery.currency) if verification.price_verified else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.total_price|format_currency(delivery.currency) if verification.total_price else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.pallet_number if verification.pallet_number else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.lpn_number if verification.lpn_number else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.product_size.value if verification.product_size else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.product_condition.value if verification.product_condition else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.intended_use.value if verification.intended_use else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.location if verification.location else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    <span class="{% if verification.verification_status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% elif verification.verification_status == 'rejected' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300{% endif %} text-xs font-medium px-2.5 py-0.5 rounded">
+                                        {% if verification.verification_status == 'completed' %}
+                                            Zweryfikowany
+                                        {% elif verification.verification_status == 'rejected' %}
+                                            Odrzucony
+                                        {% else %}
+                                            Oczekuje na weryfikację
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.verification_date.strftime('%Y-%m-%d %H:%M:%S') if verification.verification_date else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.verified_by if verification.verified_by else 'N/A' }}
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ verification.verification_notes if verification.verification_notes else 'N/A' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Dolna paginacja -->
+            <div class="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-700 dark:text-gray-400">
+                        Wyświetl
+                    </span>
+                    <select id="rowsPerPage" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="text-sm text-gray-700 dark:text-gray-400">
+                        wierszy
+                    </span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span id="paginationInfo" class="text-sm text-gray-700 dark:text-gray-400">
+                        Strona 1 z 1
+                    </span>
+                    <button id="prevPage" class="flex items-center justify-center px-3 h-8 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        Poprzednia
+                    </button>
+                    <button id="nextPage" class="flex items-center justify-center px-3 h-8 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        Następna
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- JavaScript -->
+<script>
+// Obsługa wyszukiwania produktów
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('productSearch');
+    const searchButton = document.getElementById('searchButton');
+    const searchResults = document.getElementById('searchResults');
+    const verifications = {{ verifications|tojson|safe }};
+    let priceMismatchProducts = {};
+
+    // Obsługa przycisków konsolidacji i cofania konsolidacji
+    const consolidateBtn = document.getElementById('consolidateDuplicatesBtn');
+    const undoConsolidationBtn = document.getElementById('undoConsolidationBtn');
+    
+    if (consolidateBtn) {
+        consolidateBtn.addEventListener('click', function() {
+            consolidateDuplicates();
+        });
+    }
+    
+    if (undoConsolidationBtn) {
+        undoConsolidationBtn.addEventListener('click', function() {
+            undoConsolidation();
+        });
+    }
+
+    // Obsługa przycisku wyszukiwania
+    if (searchButton) {
+        searchButton.addEventListener('click', function() {
+            const query = searchInput.value.trim();
+            if (query.length < 3) {
+                searchResults.innerHTML = '<div class="p-2 text-gray-500 dark:text-gray-400">Wprowadź co najmniej 3 znaki</div>';
+                searchResults.classList.remove('hidden');
+                return;
+            }
+            
+            // Wyświetl loader
+            searchButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Szukanie...';
+            searchButton.disabled = true;
+            
+            // Wywołaj API do wyszukiwania
+            fetch(`/staff/api/search-products?query=${encodeURIComponent(query)}&delivery_id={{ delivery.id_delivery }}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Przywróć stan przycisku
+                    searchButton.innerHTML = '<i class="fas fa-search mr-2"></i>Szukaj';
+                    searchButton.disabled = false;
+                    
+                    if (data.success) {
+                        displaySearchResults(data.products, data.duplicates_with_price_diff);
+                    } else {
+                        console.error('Błąd wyszukiwania:', data.error);
+                        searchResults.innerHTML = '<div class="p-2 text-red-500 dark:text-red-400">Wystąpił błąd podczas wyszukiwania</div>';
+                        searchResults.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    // Przywróć stan przycisku
+                    searchButton.innerHTML = '<i class="fas fa-search mr-2"></i>Szukaj';
+                    searchButton.disabled = false;
+                    
+                    console.error('Błąd wyszukiwania:', error);
+                    searchResults.innerHTML = '<div class="p-2 text-red-500 dark:text-red-400">Wystąpił błąd podczas wyszukiwania</div>';
+                    searchResults.classList.remove('hidden');
+                });
+        });
+    }
+    
+    // Obsługa wyszukiwania po naciśnięciu Enter
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchButton.click();
+            }
+        });
+        
+        // Zamknij wyniki po kliknięciu poza polem wyszukiwania
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target) && !searchButton.contains(e.target)) {
+                searchResults.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Obsługa kliknięcia w wiersz tabeli
+    const tableRows = document.querySelectorAll('table tbody tr');
+    tableRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        cells.forEach((cell, index) => {
+            cell.addEventListener('click', function(e) {
+                e.stopPropagation(); // Zapobiega propagacji zdarzenia do wiersza
+                const verificationId = row.getAttribute('data-verification-id');
+                if (verificationId) {
+                    const product = verifications.find(p => p.id_weryfikacja === verificationId);
+                    if (product) {
+                        loadProductDetails(verificationId);
+                        // Uzupełnij pole wyszukiwania w zależności od klikniętej kolumny
+                        if (index === 1) { // Nazwa produktu
+                            searchInput.value = product.product_name;
+                        } else if (index === 2) { // EAN
+                            searchInput.value = product.ean_code || '';
+                        } else if (index === 3) { // ASIN
+                            searchInput.value = product.asin_code || '';
+                        } else {
+                            searchInput.value = product.product_name;
+                        }
+                    }
+                }
+            });
+        });
+    });
+});
+
+// Funkcja do ładowania szczegółów produktu
+function loadProductDetails(verificationId) {
+    // Ustaw ID weryfikacji
+    document.getElementById('verificationId').value = verificationId;
+    
+    // Pobierz dane produktu
+    fetch(`/staff/api/product-verification/${verificationId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const product = data.product;
+                const verification = data.verification;
+                
+                // Wypełnij formularz danymi
+                document.getElementById('total_quantity_verified').value = product.total_quantity;
+                document.getElementById('price_verified').value = product.price;
+                document.getElementById('verificationStatus').value = verification.status || 'completed';
+                document.getElementById('product_condition').value = verification.product_condition || 'A';
+                document.getElementById('product_size').value = verification.product_size || 'M';
+                document.getElementById('intended_use').value = verification.intended_use || 'mystery_box';
+                document.getElementById('location').value = verification.location || '';
+                document.getElementById('pallet_number').value = product.pallet_number || '';
+                document.getElementById('lpn_number').value = product.lpn_number || '';
+                
+                // Upewnij się, że accordion jest otwarty
+                const accordionButton = document.querySelector('[data-accordion-target="#create-product-accordion-collapse-body-1"]');
+                const accordionBody = document.getElementById('create-product-accordion-collapse-body-1');
+                
+                if (accordionBody.classList.contains('hidden')) {
+                    accordionButton.click();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Błąd podczas pobierania danych produktu:', error);
+        });
+}
+
+document.getElementById('verificationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const verificationId = document.getElementById('verificationId').value;
+    if (!verificationId) {
+        alert('Wybierz produkt do weryfikacji');
+        return;
+    }
+    
+    const formData = new FormData(this);
+    
+    // Przygotuj dane podstawowe
+    const verificationData = {
+        verification_status: formData.get('verification_status'),
+        total_quantity_verified: parseInt(formData.get('total_quantity_verified')),
+        price_verified: parseFloat(formData.get('price_verified')),
+        product_condition: formData.get('product_condition'),
+        product_size: formData.get('product_size'),
+        intended_use: formData.get('intended_use'),
+        location: formData.get('location'),
+        pallet_number: formData.get('pallet_number'),
+        lpn_number: formData.get('lpn_number'),
+        notes: formData.get('notes')
+    };
+    
+    // Sprawdź, czy mamy zdjęcia do wysłania
+    const imageFiles = formData.getAll('product_images');
+    
+    if (imageFiles && imageFiles.length > 0 && imageFiles[0].size > 0) {
+        // Jeśli tak, użyj FormData do przesłania ich jako multipart/form-data
+        const uploadFormData = new FormData();
+        
+        // Dodaj dane weryfikacji jako pole JSON
+        uploadFormData.append('verification_data', JSON.stringify(verificationData));
+        
+        // Dodaj wszystkie zdjęcia
+        for (let i = 0; i < imageFiles.length; i++) {
+            uploadFormData.append('images', imageFiles[i]);
+        }
+        
+        // Wyślij dane z plikami
+        fetch(`/staff/api/verify-product-with-images/${verificationId}`, {
+            method: 'POST',
+            body: uploadFormData
+        })
+        .then(response => response.json())
+        .then(handleResponse)
+        .catch(handleError);
+    } else {
+        // Jeśli nie ma zdjęć, wyślij tylko dane JSON
+        fetch(`/staff/api/verify-product/${verificationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(verificationData)
+        })
+        .then(response => response.json())
+        .then(handleResponse)
+        .catch(handleError);
+    }
+    
+    // Funkcje pomocnicze do obsługi odpowiedzi
+    function handleResponse(data) {
+        if (data.success) {
+            // Odśwież stronę
+            window.location.reload();
+        } else {
+            alert('Błąd: ' + (data.error || 'Wystąpił nieznany błąd'));
+        }
+    }
+    
+    function handleError(error) {
+        console.error('Błąd podczas weryfikacji:', error);
+        alert('Wystąpił błąd podczas weryfikacji produktu');
+    }
+});
+
+// Inicjalizacja accordion
+document.addEventListener('DOMContentLoaded', function() {
+    const accordionItems = document.querySelectorAll('[data-accordion-target]');
+    
+    accordionItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const target = document.querySelector(this.getAttribute('data-accordion-target'));
+            if (target) {
+                if (target.classList.contains('hidden')) {
+                    target.classList.remove('hidden');
+                    this.querySelector('[data-accordion-icon]').classList.add('rotate-180');
+                } else {
+                    target.classList.add('hidden');
+                    this.querySelector('[data-accordion-icon]').classList.remove('rotate-180');
+                }
+            }
+        });
+    });
+
+    // Obsługa uploadu zdjęć
+    const imageInput = document.getElementById('product_images');
+    const previewContainer = document.getElementById('image_preview');
+    
+    if (imageInput) {
+        imageInput.addEventListener('change', function() {
+            previewContainer.innerHTML = '';
+            previewContainer.style.display = 'grid';
+            
+            if (this.files && this.files.length > 0) {
+                for (let i = 0; i < this.files.length; i++) {
+                    const file = this.files[i];
+                    if (!file.type.match('image.*')) {
+                        continue;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imgWrap = document.createElement('div');
+                        imgWrap.className = 'relative';
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'w-full h-32 object-cover rounded-lg';
+                        imgWrap.appendChild(img);
+                        
+                        const removeBtn = document.createElement('button');
+                        removeBtn.type = 'button';
+                        removeBtn.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600';
+                        removeBtn.innerHTML = '×';
+                        removeBtn.onclick = function() {
+                            imgWrap.remove();
+                            // Jeśli usunięto wszystkie zdjęcia, ukryj kontener
+                            if (previewContainer.children.length === 0) {
+                                previewContainer.style.display = 'none';
+                            }
+                        };
+                        imgWrap.appendChild(removeBtn);
+                        
+                        previewContainer.appendChild(imgWrap);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+    }
+});
+
+// Funkcje sortowania i filtrowania tabeli
+let sortDirection = 1; // 1 = asc, -1 = desc
+let lastSortedColumn = -1;
+
+// Funkcja sortowania tabeli
+function sortTable(columnIndex) {
+    const table = document.getElementById('verifications-table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // Zmień kierunek sortowania, jeśli kliknięto tę samą kolumnę
+    if (lastSortedColumn === columnIndex) {
+        sortDirection *= -1;
+    } else {
+        sortDirection = 1;
+    }
+    lastSortedColumn = columnIndex;
+    
+    // Aktualizuj ikony w nagłówkach
+    const headers = table.querySelectorAll('th');
+    headers.forEach(header => {
+        const icon = header.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-sort text-blue-500 ml-1';
+        }
+    });
+    
+    // Aktualizuj ikonę dla aktualnie sortowanej kolumny
+    const currentHeader = headers[columnIndex];
+    const icon = currentHeader.querySelector('i');
+    if (icon) {
+        icon.className = sortDirection === 1 ? 'fas fa-sort-up text-blue-500 ml-1' : 'fas fa-sort-down text-blue-500 ml-1';
+    }
+    
+    // Sortuj wiersze
+    rows.sort((a, b) => {
+        let aValue = a.cells[columnIndex].textContent.trim();
+        let bValue = b.cells[columnIndex].textContent.trim();
+        
+        // Handle numeric values (ilość, cena, wartość)
+        if (columnIndex === 3 || columnIndex === 4 || columnIndex === 5) {
+            aValue = parseFloat(aValue.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            bValue = parseFloat(bValue.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+        }
+        
+        if (aValue < bValue) return -1 * sortDirection;
+        if (aValue > bValue) return 1 * sortDirection;
+        return 0;
+    });
+    
+    // Dodaj z powrotem posortowane wiersze
+    rows.forEach(row => tbody.appendChild(row));
+    
+    // Zastosuj aktualne filtry po sortowaniu
+    applyAllFilters();
+}
+
+// Filtrowanie dla pojedynczej kolumny tekstowej
+function filterColumn(columnIndex, filterValue) {
+    const table = document.getElementById('verifications-table');
+    const tbody = table.querySelector('tbody');
+    const rows = tbody.querySelectorAll('tr');
+    const filter = filterValue.toLowerCase();
+    
+    rows.forEach(row => {
+        if (row.style.display === 'none' && filter !== '') return; // Pomijaj już ukryte wiersze
+        
+        const cellValue = row.cells[columnIndex].textContent.toLowerCase();
+        const matches = cellValue.includes(filter);
+        
+        if (!matches && filter !== '') {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Filtrowanie dla kolumn numerycznych (większe niż)
+function filterColumnNumeric(columnIndex, filterValue) {
+    const table = document.getElementById('verifications-table');
+    const tbody = table.querySelector('tbody');
+    const rows = tbody.querySelectorAll('tr');
+    const filterNum = parseFloat(filterValue) || 0;
+    
+    rows.forEach(row => {
+        if (row.style.display === 'none' && filterValue !== '') return; // Pomijaj już ukryte wiersze
+        
+        let cellValue = row.cells[columnIndex].textContent.trim();
+        cellValue = parseFloat(cellValue.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+        
+        const matches = filterValue === '' || cellValue >= filterNum;
+        
+        if (!matches) {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Resetowanie wszystkich filtrów i przywracanie widoczności wierszy
+function resetFilters() {
+    const filterInputs = document.querySelectorAll('input[id^="filter-"], select[id^="filter-"], select[id="status-column-filter"]');
+    filterInputs.forEach(input => {
+        if (input.tagName === 'INPUT') {
+            input.value = '';
+        } else if (input.tagName === 'SELECT') {
+            input.selectedIndex = 0;
+        }
+    });
+    
+    const table = document.getElementById('verifications-table');
+    const tbody = table.querySelector('tbody');
+    const rows = tbody.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Zresetuj paginację
+    currentPage = 1;
+    updatePagination();
+}
+
+// Zastosowanie wszystkich filtrów jednocześnie
+function applyAllFilters() {
+    // Najpierw przywróć widoczność wszystkich wierszy
+    const table = document.getElementById('verifications-table');
+    const tbody = table.querySelector('tbody');
+    const rows = tbody.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Zastosuj filtr dla nazwy produktu
+    const nameFilter = document.getElementById('filter-name').value;
+    if (nameFilter) filterColumn(0, nameFilter);
+    
+    // Zastosuj filtr dla EAN
+    const eanFilter = document.getElementById('filter-ean').value;
+    if (eanFilter) filterColumn(1, eanFilter);
+    
+    // Zastosuj filtr dla ASIN
+    const asinFilter = document.getElementById('filter-asin').value;
+    if (asinFilter) filterColumn(2, asinFilter);
+    
+    // Zastosuj filtr dla ilości
+    const quantityFilter = document.getElementById('filter-quantity').value;
+    if (quantityFilter) filterColumnNumeric(3, quantityFilter);
+    
+    // Zastosuj filtr dla ceny
+    const priceFilter = document.getElementById('filter-price').value;
+    if (priceFilter) filterColumnNumeric(4, priceFilter);
+    
+    // Zastosuj filtr dla wartości
+    const valueFilter = document.getElementById('filter-value').value;
+    if (valueFilter) filterColumnNumeric(5, valueFilter);
+    
+    // Zastosuj filtr dla statusu
+    const statusFilter = document.getElementById('status-column-filter').value;
+    if (statusFilter) filterColumn(6, statusFilter);
+}
+
+// Inicjalizacja modalu Flowbite
+function showModal(modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+// Funkcja do ukrywania modalu
+function hideModal(modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicjalizacja modalu przez Flowbite
+    const modal = document.getElementById('consolidationModal');
+    const modalOptions = {
+        backdrop: 'static',
+        onShow: () => {
+            console.log('Modal is shown');
+        },
+        onHide: () => {
+            console.log('Modal is hidden');
+            // Sprawdź, czy w modal ma dane o konieczności odświeżenia strony
+            if (modal.dataset.needsReload === 'true') {
+                window.location.reload();
+            }
+        }
+    };
+
+    if (modal) {
+        const modalInstance = new Modal(modal, modalOptions);
+        
+        // Obsługa przycisków zamykania
+        const closeButtons = modal.querySelectorAll('[data-modal-hide="consolidationModal"]');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                modalInstance.hide();
+            });
+        });
+    }
+});
+
+// Funkcja do wyświetlania wyników wyszukiwania
+function displaySearchResults(results, duplicates) {
+    const searchResultsBody = document.getElementById('searchResultsBody');
+    searchResultsBody.innerHTML = '';
+    
+    if (results.length === 0) {
+        searchResultsBody.innerHTML = `
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                <td colspan="8" class="px-3 py-2 text-center text-gray-500 dark:text-gray-400">
+                    Nie znaleziono produktów
+                </td>
+            </tr>
+        `;
+        document.getElementById('searchResults').classList.remove('hidden');
+        return;
+    }
+    
+    results.forEach(product => {
+        const row = document.createElement('tr');
+        row.className = 'bg-white border-b dark:bg-gray-800 dark:border-gray-700';
+        
+        // Sprawdź, czy product ma duplikaty z różnymi cenami
+        let hasPriceMismatches = false;
+        let priceWarning = '';
+        
+        if (product.price_mismatches || (product.asin_code && duplicates && duplicates[product.asin_code])) {
+            hasPriceMismatches = true;
+            const mismatchInfo = product.price_mismatches || duplicates[product.asin_code];
+            priceWarning = `<div class="text-orange-500 text-xs mt-1">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                <strong>Uwaga:</strong> W dostawie jest ${mismatchInfo.count} podobnych produktów z cenami: ${mismatchInfo.prices.join(', ')}
+            </div>`;
+        }
+        
+        row.innerHTML = `
+            <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">
+                ${product.product_name}
+                ${hasPriceMismatches ? priceWarning : ''}
+            </td>
+            <td class="px-3 py-2">${product.ean_code || 'N/A'}</td>
+            <td class="px-3 py-2">${product.asin_code || 'N/A'}</td>
+            <td class="px-3 py-2">${product.total_quantity || 0}</td>
+            <td class="px-3 py-2">${product.price ? product.price.toFixed(2) + ' €' : 'N/A'}</td>
+            <td class="px-3 py-2">${product.total_price ? product.total_price.toFixed(2) + ' €' : 'N/A'}</td>
+            <td class="px-3 py-2">${product.pallet_number || 'N/A'}</td>
+            <td class="px-3 py-2">
+                <span class="text-xs font-medium px-2.5 py-0.5 rounded ${
+                    product.verification_status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                    product.verification_status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' :
+                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                }">
+                    ${product.verification_status === 'completed' ? 'Zweryfikowany' :
+                      product.verification_status === 'rejected' ? 'Odrzucony' :
+                      'Oczekuje na weryfikację'}
+                </span>
+            </td>
+        `;
+        
+        searchResultsBody.appendChild(row);
+    });
+    
+    document.getElementById('searchResults').classList.remove('hidden');
+}
+
+// Zmienne do paginacji
+let currentPage = 1;
+let rowsPerPage = 10;
+let totalRows = 0;
+let totalPages = 0;
+
+// Inicjalizacja paginacji
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicjalizacja zmiennych paginacji
+    const table = document.getElementById('verifications-table');
+    const tbody = table.querySelector('tbody');
+    totalRows = tbody.querySelectorAll('tr').length;
+    totalPages = Math.ceil(totalRows / rowsPerPage);
+    
+    // Ustawienie domyślnej liczby wierszy dla obu selektorów
+    const rowsPerPageSelect = document.getElementById('rowsPerPage');
+    const rowsPerPageSelectTop = document.getElementById('rowsPerPageTop');
+    rowsPerPageSelect.value = rowsPerPage;
+    rowsPerPageSelectTop.value = rowsPerPage;
+    
+    // Obsługa zmiany liczby wierszy na stronę dla dolnego selektora
+    rowsPerPageSelect.addEventListener('change', function() {
+        rowsPerPage = parseInt(this.value);
+        rowsPerPageSelectTop.value = this.value;
+        totalPages = Math.ceil(totalRows / rowsPerPage);
+        currentPage = 1;
+        updatePagination();
+    });
+    
+    // Obsługa zmiany liczby wierszy na stronę dla górnego selektora
+    rowsPerPageSelectTop.addEventListener('change', function() {
+        rowsPerPage = parseInt(this.value);
+        rowsPerPageSelect.value = this.value;
+        totalPages = Math.ceil(totalRows / rowsPerPage);
+        currentPage = 1;
+        updatePagination();
+    });
+    
+    // Obsługa przycisków paginacji dla dolnej paginacji
+    document.getElementById('prevPage').addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    });
+    
+    document.getElementById('nextPage').addEventListener('click', function() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    });
+    
+    // Obsługa przycisków paginacji dla górnej paginacji
+    document.getElementById('prevPageTop').addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    });
+    
+    document.getElementById('nextPageTop').addEventListener('click', function() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    });
+    
+    // Inicjalizacja paginacji
+    updatePagination();
+});
+
+// Funkcja aktualizacji paginacji
+function updatePagination() {
+    const table = document.getElementById('verifications-table');
+    const tbody = table.querySelector('tbody');
+    const rows = tbody.querySelectorAll('tr');
+    
+    // Najpierw zastosuj wszystkie filtry
+    applyAllFilters();
+    
+    // Zbierz widoczne wiersze po filtrowaniu
+    const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+    totalRows = visibleRows.length;
+    totalPages = Math.ceil(totalRows / rowsPerPage);
+    
+    // Ukryj wszystkie wiersze
+    rows.forEach(row => {
+        row.style.display = 'none';
+    });
+    
+    // Oblicz indeksy wierszy do wyświetlenia
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+    
+    // Pokaż wiersze dla aktualnej strony
+    for (let i = startIndex; i < endIndex; i++) {
+        if (visibleRows[i]) {
+            visibleRows[i].style.display = '';
+        }
+    }
+    
+    // Aktualizuj informacje o paginacji dla obu kontrolek
+    document.getElementById('paginationInfo').textContent = `Strona ${currentPage} z ${totalPages}`;
+    document.getElementById('paginationInfoTop').textContent = `Strona ${currentPage} z ${totalPages}`;
+    
+    // Aktualizuj stan przycisków dla obu kontrolek
+    document.getElementById('prevPage').disabled = currentPage === 1;
+    document.getElementById('nextPage').disabled = currentPage === totalPages;
+    document.getElementById('prevPageTop').disabled = currentPage === 1;
+    document.getElementById('nextPageTop').disabled = currentPage === totalPages;
+}
+
+// Synchronizacja przewijania suwaków
+document.addEventListener('DOMContentLoaded', function() {
+    const tableContainer = document.querySelector('.overflow-x-auto');
+    const bottomScroll = document.querySelector('.overflow-x-auto.mt-2');
+    
+    if (tableContainer && bottomScroll) {
+        // Ustaw szerokość suwaka na szerokość tabeli
+        const tableWidth = tableContainer.scrollWidth;
+        bottomScroll.querySelector('div').style.width = `${tableWidth}px`;
+        
+        // Synchronizacja przewijania tabeli z suwakiem
+        tableContainer.addEventListener('scroll', function() {
+            bottomScroll.scrollLeft = this.scrollLeft;
+        });
+        
+        // Synchronizacja przewijania suwaka z tabelą
+        bottomScroll.addEventListener('scroll', function() {
+            tableContainer.scrollLeft = this.scrollLeft;
+        });
+    }
+});
+</script>
+{% endblock %}

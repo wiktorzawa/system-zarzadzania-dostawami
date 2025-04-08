@@ -1,0 +1,331 @@
+{% extends "staff/staff_base.html" %}
+
+{% block title %}E-commerce - Produkty{% endblock %}
+
+{% block staff_content %}
+<div class="grid grid-cols-12 bg-white dark:bg-gray-900">
+  <div class="col-span-full mx-4 mt-4">
+    <nav class="mb-4 flex" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
+        <li class="inline-flex items-center">
+          <a href="#" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-primary-700 dark:text-gray-400 dark:hover:text-white">
+            <svg class="me-2.5 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+              <path fill-rule="evenodd" d="M11.3 3.3a1 1 0 0 1 1.4 0l6 6 2 2a1 1 0 0 1-1.4 1.4l-.3-.3V19a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-3h-2v3c0 .6-.4 1-1 1H7a2 2 0 0 1-2-2v-6.6l-.3.3a1 1 0 0 1-1.4-1.4l2-2 6-6Z" clip-rule="evenodd" />
+            </svg>
+            Panel
+          </a>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg class="mx-1 h-4 w-4 text-gray-400 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" />
+            </svg>
+            <a href="#" class="ms-1 text-sm font-medium text-gray-700 hover:text-primary-700 dark:text-gray-400 dark:hover:text-white md:ms-2">E-commerce</a>
+          </div>
+        </li>
+        <li aria-current="page">
+          <div class="flex items-center">
+            <svg class="mx-1 h-4 w-4 text-gray-400 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" />
+            </svg>
+            <span class="ms-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ms-2">Wszystkie produkty</span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+    <h1 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Wszystkie produkty</h1>
+    
+    <!-- Statystyki -->
+    <div class="grid grid-cols-2 gap-x-4 gap-y-4 lg:grid-cols-4 lg:gap-y-0">
+      <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+        <span class="inline-flex items-center rounded-sm bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
+          <svg class="-ms-1 me-1 h-3.5 w-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v13m0-13 4 4m-4-4-4 4" />
+          </svg>
+          8%
+        </span>
+        <h2 class="text-2xl font-bold leading-none text-gray-900 dark:text-white">{{ total_products }}</h2>
+        <p class="text-gray-500 dark:text-gray-400">Wszystkie produkty</p>
+      </div>
+      <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+        <span class="inline-flex items-center rounded-sm bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
+          <svg class="-ms-1 me-1 h-3.5 w-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v13m0-13 4 4m-4-4-4 4" />
+          </svg>
+          12,4%
+        </span>
+        <h2 class="text-2xl font-bold leading-none text-gray-900 dark:text-white">{{ new_products }}</h2>
+        <p class="text-gray-500 dark:text-gray-400">Nowe produkty</p>
+      </div>
+      <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+        <span class="inline-flex items-center rounded-sm bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-300">
+          <svg class="-ms-1 me-1 h-3.5 w-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 14-4-4m4 4 4-4" />
+          </svg>
+          3,7%
+        </span>
+        <h2 class="text-2xl font-bold leading-none text-gray-900 dark:text-white">{{ sold_products }}</h2>
+        <p class="text-gray-500 dark:text-gray-400">Sprzedane produkty</p>
+      </div>
+      <div class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+        <span class="inline-flex items-center rounded-sm bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-300">
+          <svg class="-ms-1 me-1 h-3.5 w-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 14-4-4m4 4 4-4" />
+          </svg>
+          12,4%
+        </span>
+        <h2 class="text-2xl font-bold leading-none text-gray-900 dark:text-white">{{ returned_products }}</h2>
+        <p class="text-gray-500 dark:text-gray-400">Zwrócone produkty</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="relative col-span-12 overflow-hidden bg-white dark:bg-gray-900">
+  <div class="items-center justify-between space-y-3 border-b p-4 dark:border-gray-800 border-gray-200 sm:flex sm:space-x-4 sm:space-y-0 md:flex-row">
+    <div class="flex items-center space-x-1.5">
+      <h5 class="font-semibold dark:text-white">Lista produktów</h5>
+      <button type="button" data-tooltip-target="results-tooltip" class="text-gray-400 hover:text-gray-900 dark:hover:text-white">
+        <svg class="h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+          <path fill-rule="evenodd" d="M2 12a10 10 0 1 1 20 0 10 10 0 0 1-20 0Zm9.4-5.5a1 1 0 1 0 0 2 1 1 0 1 0 0-2ZM10 10a1 1 0 1 0 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4c0-.6-.4-1-1-1h-2Z" clip-rule="evenodd" />
+        </svg>
+        <span class="sr-only">Więcej informacji</span>
+      </button>
+      <div id="results-tooltip" role="tooltip" class="tooltip invisible absolute z-10 inline-block rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white opacity-0 shadow-xs transition-opacity duration-300 dark:bg-gray-700">
+        Wyświetlanie {{ products.total }} wyników
+        <div class="tooltip-arrow" data-popper-arrow=""></div>
+      </div>
+    </div>
+    <div class="flex items-center space-x-3 sm:justify-end">
+      <button
+        id="createProductButton"
+        data-modal-target="createProductModal"
+        data-modal-toggle="createProductModal"
+        type="button"
+        class="flex w-full items-center justify-center rounded-lg bg-primary-700 px-3 py-2 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:w-auto"
+      >
+        <svg class="-ms-0.5 me-1.5 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7 7V5" />
+        </svg>
+        Dodaj produkt
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtry -->
+  <div class="flex flex-col-reverse items-start justify-between p-4 md:flex-row md:items-center md:space-x-4">
+    <div class="grid w-full grid-cols-2 gap-4 md:grid-cols-4 lg:w-2/3 mb-4 mb:mb-0">
+      <div class="relative z-0 w-full">
+        <input
+          type="text"
+          id="search"
+          name="search"
+          class="peer block w-full appearance-none border-0 border-b-2 border-gray-200 bg-transparent px-0 py-2.5 text-sm text-gray-900 focus:border-primary-600 focus:outline-none focus:ring-0 dark:border-gray-700 dark:text-white dark:focus:border-primary-500"
+          placeholder=" "
+        />
+        <label
+          for="search"
+          class="absolute top-3 -z-10 origin-[0] -translate-y-6 scale-75 text-sm text-gray-500 duration-300 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:start-0 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-primary-600 dark:text-gray-400 peer-focus:dark:text-primary-500"
+        >
+          Szukaj
+        </label>
+      </div>
+      <div class="w-full">
+        <select
+          id="category"
+          class="peer block w-full appearance-none border-0 border-b-2 border-gray-200 bg-transparent px-0 py-2.5 text-sm text-gray-500 focus:border-gray-200 focus:outline-none focus:ring-0 dark:border-gray-700 dark:text-gray-400"
+        >
+          <option selected="">Kategoria</option>
+          <option value="PC">Komputery</option>
+          <option value="phone">Telefony</option>
+          <option value="tablet">Tablety</option>
+          <option value="console">Konsole</option>
+        </select>
+      </div>
+      <div class="w-full">
+        <select
+          id="price"
+          class="peer block w-full appearance-none border-0 border-b-2 border-gray-200 bg-transparent px-0 py-2.5 text-sm text-gray-500 focus:border-gray-200 focus:outline-none focus:ring-0 dark:border-gray-700 dark:text-gray-400"
+        >
+          <option selected="">Cena</option>
+          <option value="below-100">0-100 PLN</option>
+          <option value="below-500">101-500 PLN</option>
+          <option value="below-1000">501-1000 PLN</option>
+          <option value="over-1000">1000+ PLN</option>
+        </select>
+      </div>
+      <div class="w-full">
+        <select
+          id="status"
+          class="peer block w-full appearance-none border-0 border-b-2 border-gray-200 bg-transparent px-0 py-2.5 text-sm text-gray-500 focus:border-gray-200 focus:outline-none focus:ring-0 dark:border-gray-700 dark:text-gray-400"
+        >
+          <option selected="">Status</option>
+          <option value="active">Aktywny</option>
+          <option value="inactive">Nieaktywny</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela produktów -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+      <thead class="bg-gray-50 text-xs uppercase dark:bg-gray-800">
+        <tr>
+          <th scope="col" class="p-4">
+            <div class="flex items-center">
+              <input
+                id="checkbox-all"
+                type="checkbox"
+                class="h-4 w-4 rounded-sm border-gray-300 bg-gray-100 text-primary-600 focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600"
+              />
+              <label for="checkbox-all" class="sr-only">checkbox</label>
+            </div>
+          </th>
+          <th scope="col" class="px-4 py-3">
+            <span class="sr-only">Rozwiń/Zwiń</span>
+          </th>
+          <th scope="col" class="min-w-56 px-4 py-3">Produkt</th>
+          <th scope="col" class="min-w-40 px-4 py-3">
+            <div class="inline-flex items-center">
+              Kategoria
+              <svg class="ml-1 inline-block h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+              </svg>
+            </div>
+          </th>
+          <th scope="col" class="min-w-24 px-4 py-3">
+            <div class="inline-flex items-center">
+              Cena
+              <svg class="ml-1 inline-block h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+              </svg>
+            </div>
+          </th>
+          <th scope="col" class="min-w-24 px-4 py-3">
+            <div class="inline-flex items-center">
+              Stan
+              <svg class="ml-1 inline-block h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+              </svg>
+            </div>
+          </th>
+          <th scope="col" class="min-w-28 px-4 py-3">Status</th>
+          <th scope="col" class="min-w-28 px-4 py-3">Akcje</th>
+        </tr>
+      </thead>
+      <tbody data-accordion="table-column">
+        {% for product in products.items %}
+        <tr class="cursor-pointer border-b transition hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-gray-800 border-gray-200">
+          <td class="w-4 px-4 py-3">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded-sm border-gray-300 bg-gray-100 text-primary-600 focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600"
+                onclick="event.stopPropagation()"
+              />
+            </div>
+          </td>
+          <td class="w-4 p-3">
+            <svg data-accordion-icon="" class="h-5 w-5 shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" />
+            </svg>
+          </td>
+          <th scope="row" class="flex items-center whitespace-nowrap px-4 py-3 font-medium text-gray-900 dark:text-white">
+            <div class="me-3 aspect-square h-8 w-8 shrink-0">
+              {% if product.image_url %}
+              <img src="{{ product.image_url }}" alt="{{ product.product_name }}" class="h-full w-full" />
+              {% else %}
+              <div class="flex h-full w-full items-center justify-center bg-gray-100 dark:bg-gray-700">
+                <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              {% endif %}
+            </div>
+            {{ product.product_name }}
+          </th>
+          <td class="px-4 py-3">{{ product.category }}</td>
+          <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900 dark:text-white">
+            {% if product.price %}
+              {{ "%.2f"|format(product.price|float) }} PLN
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900 dark:text-white">{{ product.quantity }}</td>
+          <td class="whitespace-nowrap px-4 py-3">
+            {% if product.is_active %}
+            <div class="me-2 mr-2 w-fit rounded-sm bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">Aktywny</div>
+            {% else %}
+            <div class="me-2 mr-2 w-fit rounded-sm bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-300">Nieaktywny</div>
+            {% endif %}
+          </td>
+          <td class="whitespace-nowrap px-4 py-3">
+            <button
+              type="button"
+              class="text-primary-700 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-600"
+              onclick="event.stopPropagation(); showProductDetails('{{ product.id_product }}')"
+            >
+              <svg class="h-5 w-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M11.3 6.2H5a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h11c1.1 0 2-1 2-2.1V11l-4 4.2c-.3.3-.7.6-1.2.7l-2.7.6c-1.7.3-3.3-1.3-3-3.1l.6-2.9c.1-.5.4-1 .7-1.3l3-3.1Z" clip-rule="evenodd" />
+                <path fill-rule="evenodd" d="M19.8 4.3a2.1 2.1 0 0 0-1-1.1 2 2 0 0 0-2.2.4l-.6.6 2.9 3 .5-.6a2.1 2.1 0 0 0 .6-1.5c0-.2 0-.5-.2-.8Zm-2.4 4.4-2.8-3-4.8 5-.1.3-.7 3c0 .3.3.7.6.6l2.7-.6.3-.1 4.7-5Z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginacja -->
+  <div class="sticky bottom-0 right-0 w-full items-center justify-between space-y-3 border-t border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:flex sm:space-y-0">
+    <div class="flex items-center gap-2">
+      <a
+        href="{{ url_for('staff.ecommerce_products', page=products.prev_num) if products.has_prev else '#' }}"
+        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+        {% if not products.has_prev %}disabled{% endif %}
+      >
+        <svg class="mr-1 h-5 w-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m7 7-7-7 7-7" />
+        </svg>
+        Poprzednia
+      </a>
+      <a
+        href="{{ url_for('staff.ecommerce_products', page=products.next_num) if products.has_next else '#' }}"
+        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+        {% if not products.has_next %}disabled{% endif %}
+      >
+        Następna
+        <svg class="ml-1 h-5 w-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
+      </a>
+    </div>
+    <div class="text-sm text-gray-500 dark:text-gray-400">
+      Strona <span class="font-semibold text-gray-900 dark:text-white">{{ products.page }}</span> z
+      <span class="font-semibold text-gray-900 dark:text-white">{{ products.pages }}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function showProductDetails(productId) {
+    fetch(`/staff/api/product/${productId}/details`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Tu można dodać kod do wyświetlania szczegółów w modalu
+          console.log('Szczegóły produktu:', data.product);
+        } else {
+          console.error('Błąd:', data.error);
+        }
+      })
+      .catch(error => console.error('Błąd:', error));
+  }
+</script>
+{% endblock %} 

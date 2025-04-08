@@ -101,76 +101,31 @@
               </form>
           </div>
           <div class="overflow-x-auto">
-              <div class="relative overflow-x-auto shadow-md sm:rounded-lg mt-4">
-                  <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                      <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
-                          <tr>
-                              <th scope="col" class="p-4">
-                                  <div class="flex items-center">
-                                      <input id="checkbox-all" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                      <label for="checkbox-all" class="sr-only">checkbox</label>
-                                  </div>
-                              </th>
-                              <th scope="col" class="px-3 py-3 w-10"></th>
-                              <th scope="col" class="px-3 py-3">ID Dostawy</th>
-                              <th scope="col" class="px-3 py-3">Dostawca</th>
-                              <th scope="col" class="px-3 py-3">Numer LOT</th>
-                              <th scope="col" class="px-3 py-3">Kategoria dostawy</th>
-                              <th scope="col" class="px-3 py-3">Klasa produktów</th>
-                              <th scope="col" class="px-3 py-3">Wartość rynkowa ze specyfikacji</th>
-                              <th scope="col" class="px-3 py-3">Cena za LOT BRUTTO PLN</th>
-                              <th scope="col" class="px-3 py-3">Data dostawy</th>
-                              <th scope="col" class="px-3 py-3">Status</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          {% for delivery in deliveries.items %}
-                          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 accordion-header cursor-pointer"
-                              data-delivery-id="{{ delivery.id_delivery }}" aria-expanded="false">
-                              <td class="w-4 p-4">
-                                  <div class="flex items-center">
-                                      <input id="checkbox-{{ delivery.id_delivery }}" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                      <label for="checkbox-{{ delivery.id_delivery }}" class="sr-only">checkbox</label>
-                                  </div>
-                              </td>
-                              <td class="px-3 py-2 w-10">
-                                  <button type="button" class="toggle-accordion">
-                                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                      </svg>
-                                  </button>
-                              </td>
-                              <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">
-                                  {{ delivery.id_delivery }}
-                              </td>
-                              <td class="px-3 py-2">
-                                  {% set supplier_name = "Nieznany" %}
-                                  <!-- DEBUG: {{ delivery.id_supplier }} -->
-                                  {% if delivery.id_supplier in suppliers_dict %}
-                                      {% set supplier_name = suppliers_dict[delivery.id_supplier].company_name %}
-                                  {% endif %}
-                                  {{ supplier_name }}
-                              </td>
-                              <td class="px-3 py-2">
-                                  {{ delivery.lot_number if delivery.lot_number else "N/A" }}
-                              </td>
-                              <td class="px-3 py-2">
-                                  {{ delivery.delivery_category if delivery.delivery_category else "N/A" }}
-                              </td>
-                              <td class="px-3 py-2">
-                                  {{ delivery.product_class if delivery.product_class else "N/A" }}
-                              </td>
-                              <td class="px-3 py-2">
-                                  {{ delivery.total_value|format_currency(delivery.currency) if delivery.total_value else "N/A" }}
-                              </td>
-                              <td class="px-3 py-2">
-                                  {{ delivery.delivery_value|format_currency('PLN') if delivery.delivery_value else "N/A" }}
-                              </td>
-                              <td class="px-3 py-2">
-                                  {{ delivery.delivery_date.strftime('%d-%m-%Y') if delivery.delivery_date else "N/A" }}
-                              </td>
-                              <td class="px-3 py-2">
-                                  <span class="{% if delivery.status == 'new' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300{% elif delivery.status == 'pending_verification' %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300{% elif delivery.status == 'processing' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300{% elif delivery.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %} text-xs font-medium px-2.5 py-0.5 rounded">
+              <div class="space-y-4 p-4">
+
+                  {% for delivery in deliveries.items %}
+                  <div class="m-4 border-4 rounded-xl shadow-2xl hover:shadow-2xl transition-shadow overflow-hidden
+                              {% if delivery.status == 'new' %}bg-slate-900 dark:bg-slate-950 border-purple-700 dark:border-purple-600 text-white
+                              {% elif delivery.status == 'pending_verification' %}bg-slate-900 dark:bg-slate-950 border-purple-700 dark:border-purple-600 text-white
+                              {% elif delivery.status == 'processing' %}bg-slate-900 dark:bg-slate-950 border-purple-700 dark:border-purple-600 text-white
+                              {% elif delivery.status == 'completed' %}bg-slate-900 dark:bg-slate-950 border-purple-700 dark:border-purple-600 text-white
+                              {% else %}bg-slate-900 dark:bg-slate-950 border-purple-700 dark:border-purple-600 text-white{% endif %}">
+                      <!-- Nagłówek karty - ciemniejszy fioletowy -->
+                      <div class="p-4 border-b-2 
+                                {% if delivery.status == 'new' %}bg-purple-900 dark:bg-purple-950 border-purple-700 dark:border-purple-600 text-white
+                                {% elif delivery.status == 'pending_verification' %}bg-purple-900 dark:bg-purple-950 border-purple-700 dark:border-purple-600 text-white
+                                {% elif delivery.status == 'processing' %}bg-purple-900 dark:bg-purple-950 border-purple-700 dark:border-purple-600 text-white
+                                {% elif delivery.status == 'completed' %}bg-purple-900 dark:bg-purple-950 border-purple-700 dark:border-purple-600 text-white
+                                {% else %}bg-purple-900 dark:bg-purple-950 border-purple-700 dark:border-purple-600 text-white{% endif %}">
+                          <div class="flex justify-between items-center">
+                              <h3 class="text-xl font-bold">
+                                  Dostawa #{{ delivery.id_delivery }}
+                              </h3>
+                              <span class="{% if delivery.status == 'new' %}bg-purple-800 text-white dark:bg-purple-700 dark:text-white
+                                {% elif delivery.status == 'pending_verification' %}bg-purple-800 text-white dark:bg-purple-700 dark:text-white
+                                {% elif delivery.status == 'processing' %}bg-purple-800 text-white dark:bg-purple-700 dark:text-white
+                                {% elif delivery.status == 'completed' %}bg-purple-800 text-white dark:bg-purple-700 dark:text-white
+                                {% else %}bg-purple-800 text-white dark:bg-purple-700 dark:text-white{% endif %} text-xs font-medium px-3 py-1 rounded-full">
                                   {% if delivery.status == 'new' %}
                                       Nowa
                                   {% elif delivery.status == 'pending_verification' %}
@@ -183,167 +138,236 @@
                                       {{ delivery.status }}
                                   {% endif %}
                               </span>
-                          </tr>
-                          <!-- Szczegóły dostawy - rozwijane -->
-                          <tr class="accordion-body hidden" id="accordion-body-{{ delivery.id_delivery }}">
-                              <td colspan="11" class="p-4">
-                                  <!-- Tytuł szczegółów dostawy -->
-                                  <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                                      SZCZEGÓŁY DOSTAWY {{ delivery.id_delivery }} {{ delivery.delivery_category|upper if delivery.delivery_category else "" }} Z DNIA {{ delivery.delivery_date.strftime('%d-%m-%Y') if delivery.delivery_date else "N/A" }}
-                                  </h2>
-                                  
-                                  <div class="grid grid-cols-3 gap-4 mb-4">
-                                      <!-- Ogólne informacje o dostawie -->
-                                      <div class="p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
-                                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">OGÓLNE INFORMACJE O DOSTAWIE</h3>
-                                          <ul class="space-y-2">
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Nazwa dostawcy:</span>
-                                                  <span>
-                                                      {% if delivery.id_supplier in suppliers_dict %}
-                                                          {{ suppliers_dict[delivery.id_supplier].company_name }}
-                                                      {% else %}
-                                                          Nieznany
-                                                      {% endif %}
-                                                  </span>
-                                              </li>
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Numer LOT:</span>
-                                                  <span>{{ delivery.lot_number if delivery.lot_number else "N/A" }}</span>
-                                              </li>
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Numery palet:</span>
-                                                  <span>{{ delivery.pallet_number if delivery.pallet_number else "N/A" }}</span>
-                                              </li>
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Kategoria dostawy:</span>
-                                                  <span>{{ delivery.delivery_category if delivery.delivery_category else "N/A" }}</span>
-                                              </li>
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Klasa produktów:</span>
-                                                  <span>{{ delivery.product_class if delivery.product_class else "N/A" }}</span>
-                                              </li>
-                                          </ul>
-                                      </div>
-                                      
-                                      <!-- Oferta dostawcy - informacje finansowe -->
-                                      <div class="p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
-                                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">OFERTA DOSTAWCY - INFORMACJE FINANSOWE</h3>
-                                          <ul class="space-y-2">
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Wartość rynkowa ze specyfikacji:</span>
-                                                  <span>{{ delivery.total_value|format_currency(delivery.currency) if delivery.total_value else "N/A" }}</span>
-                                              </li>
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Wartość rynkowa w PLN:</span>
-                                                  <span>{{ delivery.total_value_pln|format_currency('PLN') if delivery.total_value_pln else "N/A" }}</span>
-                                              </li>
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Cena za LOT BRUTTO PLN:</span>
-                                                  <span>{{ delivery.delivery_value|format_currency('PLN') if delivery.delivery_value else "N/A" }}</span>
-                                              </li>
-                                          </ul>
-                                      </div>
-                                      
-                                      <!-- Szczegóły finansowe dostawy -->
-                                      <div class="p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
-                                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">SZCZEGÓŁY FINANSOWE DOSTAWY</h3>
-                                          <ul class="space-y-2">
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Waluta:</span>
-                                                  <span>{{ delivery.currency if delivery.currency else "N/A" }}</span>
-                                              </li>
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Kurs EUR:</span>
-                                                  <span>{{ delivery.exchange_rate if delivery.exchange_rate else "N/A" }}</span>
-                                              </li>
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Procent wartości:</span>
-                                                  <span>{{ delivery.value_percentage }}%</span>
-                                              </li>
-                                              <li class="flex items-center">
-                                                  <span class="font-medium mr-2">Stawka VAT:</span>
-                                                  <span>{{ delivery.vat_rate if delivery.vat_rate else "N/A" }}%</span>
-                                              </li>
-                                          </ul>
-                                      </div>
+                          </div>
+                      </div>
+                      
+                      <!-- Zawartość karty -->
+                      <div class="p-5 bg-gray-100 dark:bg-slate-950">
+                          <!-- Sekcje wyświetlane obok siebie -->
+                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <!-- Sekcja - Informacje podstawowe -->
+                              <div class="rounded-lg border-2 overflow-hidden shadow-md bg-white dark:bg-slate-900
+                                  {% if delivery.status == 'new' %}border-purple-600 dark:border-purple-500
+                                  {% elif delivery.status == 'pending_verification' %}border-purple-600 dark:border-purple-500
+                                  {% elif delivery.status == 'processing' %}border-purple-600 dark:border-purple-500
+                                  {% elif delivery.status == 'completed' %}border-purple-600 dark:border-purple-500
+                                  {% else %}border-purple-600 dark:border-purple-500{% endif %}">
+                                  <div class="p-3 border-b-2 
+                                    {% if delivery.status == 'new' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% elif delivery.status == 'pending_verification' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% elif delivery.status == 'processing' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% elif delivery.status == 'completed' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% else %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600{% endif %}">
+                                      <h4 class="text-base font-semibold text-white dark:text-white">
+                                        Informacje podstawowe
+                                      </h4>
                                   </div>
-                                  
-                                  <!-- Produkty w dostawie -->
-                                  <div class="p-4 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700 mb-4">
-                                      <div class="flex justify-between items-center mb-3">
-                                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">PRODUKTY W DOSTAWIE</h3>
-                                          <button type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" 
-                                                  onclick="openProductsModal('{{ delivery.id_delivery }}')">
-                                              Zobacz wszystkie produkty
-                                          </button>
-                                      </div>
-                                      
-                                      <!-- Tabela z produktami (5 pierwszych) -->
-                                      <div class="relative overflow-x-auto">
-                                          <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                              <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                                  <tr>
-                                                      <th scope="col" class="px-3 py-2">NR LOT</th>
-                                                      <th scope="col" class="px-3 py-2">NR PALETY</th>
-                                                      <th scope="col" class="px-3 py-2">ITEM DESC</th>
-                                                      <th scope="col" class="px-3 py-2">EAN</th>
-                                                      <th scope="col" class="px-3 py-2">ASIN</th>
-                                                      <th scope="col" class="px-3 py-2">KRAJ</th>
-                                                      <th scope="col" class="px-3 py-2">ILOŚĆ</th>
-                                                      <th scope="col" class="px-3 py-2">WARTOŚĆ</th>
-                                                  </tr>
-                                              </thead>
-                                              <tbody>
-                                                  {% set products = delivery.products if delivery.products is defined else [] %}
-                                                  {% for product in products[:5] %}
-                                                  <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                                      <td class="px-3 py-2">{{ product.lot_number }}</td>
-                                                      <td class="px-3 py-2">{{ product.pallet_number }}</td>
-                                                      <td class="px-3 py-2">{{ product.product_name }}</td>
-                                                      <td class="px-3 py-2">{{ product.ean_code }}</td>
-                                                      <td class="px-3 py-2">{{ product.asin_code }}</td>
-                                                      <td class="px-3 py-2">{{ product.country if product.country is defined else "N/A" }}</td>
-                                                      <td class="px-3 py-2">{{ product.quantity }} {{ product.unit }}</td>
-                                                      <td class="px-3 py-2">{{ product.value|format_currency(product.currency if product.currency else delivery.currency) }}</td>
-                                                  </tr>
-                                                  {% else %}
-                                                  <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                                      <td colspan="8" class="px-3 py-4 text-center">Brak produktów</td>
-                                                  </tr>
-                                                  {% endfor %}
-                                              </tbody>
-                                          </table>
-                                      </div>
+                                  <div class="p-4">
+                                    <ul class="space-y-2 text-sm">
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Dostawca:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                              {% set supplier_name = "Nieznany" %}
+                                              {% if delivery.id_supplier in suppliers_dict %}
+                                                  {% set supplier_name = suppliers_dict[delivery.id_supplier].company_name %}
+                                              {% endif %}
+                                              {{ supplier_name }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Data:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.delivery_date.strftime('%d-%m-%Y') if delivery.delivery_date else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">LOT:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.lot_number if delivery.lot_number else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Numery palet:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.pallet_number if delivery.pallet_number else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Data utworzenia:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.created_at.strftime('%d-%m-%Y %H:%M') if delivery.created_at else "N/A" }}
+                                            </span>
+                                        </li>
+                                    </ul>
                                   </div>
-                                  
-                                  <!-- Przyciski funkcyjne -->
-                                  <div class="grid grid-cols-5 gap-4">
-                                      <button type="button" class="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800">
-                                          Zatwierdź dostawę
-                                      </button>
-                                      <button type="button" class="text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-yellow-600 dark:hover:bg-yellow-700 focus:outline-none dark:focus:ring-yellow-800">
-                                          Edytuj dane
-                                      </button>
-                                      <button type="button" class="text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700 focus:outline-none dark:focus:ring-purple-800">
-                                          Generuj raport
-                                      </button>
-                                      <button type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
-                                          Eksportuj dane
-                                      </button>
-                                      <button type="button" class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-red-600 dark:hover:bg-red-700 focus:outline-none dark:focus:ring-red-800">
-                                          Odrzuć dostawę
-                                      </button>
+                              </div>
+                              
+                              <!-- Sekcja - Informacje finansowe -->
+                              <div class="rounded-lg border-2 overflow-hidden shadow-md bg-white dark:bg-slate-900
+                                  {% if delivery.status == 'new' %}border-purple-600 dark:border-purple-500
+                                  {% elif delivery.status == 'pending_verification' %}border-purple-600 dark:border-purple-500
+                                  {% elif delivery.status == 'processing' %}border-purple-600 dark:border-purple-500
+                                  {% elif delivery.status == 'completed' %}border-purple-600 dark:border-purple-500
+                                  {% else %}border-purple-600 dark:border-purple-500{% endif %}">
+                                  <div class="p-3 border-b-2 
+                                    {% if delivery.status == 'new' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% elif delivery.status == 'pending_verification' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% elif delivery.status == 'processing' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% elif delivery.status == 'completed' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% else %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600{% endif %}">
+                                      <h4 class="text-base font-semibold text-white dark:text-white">
+                                        Informacje finansowe
+                                      </h4>
                                   </div>
-                              </td>
-                          </tr>
-                          {% else %}
-                          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                              <td colspan="11" class="px-3 py-4 text-center font-medium">Brak dostaw spełniających kryteria wyszukiwania</td>
-                          </tr>
-                          {% endfor %}
-                      </tbody>
-                  </table>
+                                  <div class="p-4">
+                                    <ul class="space-y-2 text-sm">
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Wartość spec.:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.total_value|format_currency(delivery.currency) if delivery.total_value else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Wartość w PLN:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.total_value_pln|format_currency('PLN') if delivery.total_value_pln else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Cena LOT:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.delivery_value|format_currency('PLN') if delivery.delivery_value else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">% wartości:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.value_percentage if delivery.value_percentage else "N/A" }}%
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Waluta:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.currency if delivery.currency else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Kurs walutowy:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.exchange_rate if delivery.exchange_rate else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">VAT:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.vat_rate if delivery.vat_rate else "N/A" }}%
+                                            </span>
+                                        </li>
+                                    </ul>
+                                  </div>
+                              </div>
+                              
+                              <!-- Sekcja - Informacje produktowe -->
+                              <div class="rounded-lg border-2 overflow-hidden shadow-md bg-white dark:bg-slate-900
+                                  {% if delivery.status == 'new' %}border-purple-600 dark:border-purple-500
+                                  {% elif delivery.status == 'pending_verification' %}border-purple-600 dark:border-purple-500
+                                  {% elif delivery.status == 'processing' %}border-purple-600 dark:border-purple-500
+                                  {% elif delivery.status == 'completed' %}border-purple-600 dark:border-purple-500
+                                  {% else %}border-purple-600 dark:border-purple-500{% endif %}">
+                                  <div class="p-3 border-b-2 
+                                    {% if delivery.status == 'new' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% elif delivery.status == 'pending_verification' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% elif delivery.status == 'processing' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% elif delivery.status == 'completed' %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600
+                                    {% else %}bg-purple-800 dark:bg-purple-900 border-purple-700 dark:border-purple-600{% endif %}">
+                                      <h4 class="text-base font-semibold text-white dark:text-white">
+                                        Informacje produktowe
+                                      </h4>
+                                  </div>
+                                  <div class="p-4">
+                                    <ul class="space-y-2 text-sm">
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Kategoria:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.delivery_category if delivery.delivery_category else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Klasa produktów:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.product_class if delivery.product_class else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Kraj pochodzenia:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.country_of_origin if delivery.country_of_origin else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Ilość produktów:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {% set products_count = 0 %}
+                                                {% if delivery.products is defined %}
+                                                  {% set products_count = delivery.products|length %}
+                                                {% endif %}
+                                                {{ products_count }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Kod zlecenia:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white">
+                                                {{ delivery.order_code if delivery.order_code else "N/A" }}
+                                            </span>
+                                        </li>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium">Uwagi dostawcy:</span>
+                                            <span class="font-medium text-gray-900 dark:text-white truncate max-w-[150px]" title="{{ delivery.supplier_notes if delivery.supplier_notes else 'Brak uwag' }}">
+                                                {{ delivery.supplier_notes if delivery.supplier_notes else "Brak uwag" }}
+                                            </span>
+                                        </li>
+                                    </ul>
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          <!-- Przyciski funkcyjne -->
+                          <div class="flex flex-wrap justify-between gap-2 pt-4 border-t border-gray-300 dark:border-gray-600 mt-4">
+                              <div class="w-16">
+                                  <input id="checkbox-{{ delivery.id_delivery }}" type="checkbox" class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                  <label for="checkbox-{{ delivery.id_delivery }}" class="ml-1 text-xs text-gray-700 dark:text-gray-300">Wybierz</label>
+                              </div>
+                              
+                              <div class="flex flex-wrap flex-1 gap-2 justify-end">
+                                  <button type="button" onclick="openProductsModal('{{ delivery.id_delivery }}')" class="text-white bg-teal-600 hover:bg-teal-700 focus:ring-4 focus:ring-teal-300 font-medium rounded-lg text-xs px-3 py-1.5 dark:bg-teal-600 dark:hover:bg-teal-700 focus:outline-none dark:focus:ring-teal-800">
+                                      <i class="fas fa-box-open mr-1"></i> Produkty
+                                  </button>
+                                  <button type="button" class="text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-xs px-3 py-1.5 dark:bg-yellow-600 dark:hover:bg-yellow-700 focus:outline-none dark:focus:ring-yellow-800">
+                                      <i class="fas fa-edit mr-1"></i> Edytuj 
+                                  </button>
+                                  <button type="button" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-xs px-3 py-1.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                                      <i class="fas fa-file-export mr-1"></i> Eksport
+                                  </button>
+                                  {% if delivery.status == 'pending_verification' %}
+                                  <button type="button" onclick="startVerification('{{ delivery.id_delivery }}')" class="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-xs px-3 py-1.5 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800">
+                                      <i class="fas fa-check mr-1"></i> Weryfikuj
+                                  </button>
+                                  {% endif %}
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  {% else %}
+                  <div class="col-span-full text-center p-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow">
+                      <div class="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                          </svg>
+                      </div>
+                      <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1">Brak dostaw spełniających kryteria</h3>
+                      <p class="text-gray-500 dark:text-gray-400">Spróbuj zmienić kryteria filtrowania, aby zobaczyć dostawy.</p>
+                  </div>
+                  {% endfor %}
               </div>
           </div>
       </div>
@@ -571,5 +595,122 @@
             });
         });
     });
+</script>
+
+<!-- JavaScript dla obsługi weryfikacji -->
+<script>
+function startVerification(deliveryId) {
+    console.log('Rozpoczynam weryfikację dla dostawy:', deliveryId);
+    
+    if (confirm('Czy na pewno chcesz rozpocząć weryfikację tej dostawy?')) {
+        console.log('Użytkownik potwierdził weryfikację');
+        
+        fetch(`/staff/api/start-verification/${deliveryId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            console.log('Otrzymano odpowiedź:', response);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Dane odpowiedzi:', data);
+            if (data.success) {
+                console.log('Weryfikacja rozpoczęta, przekierowuję do:', data.redirect_url);
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Błąd weryfikacji:', data.error);
+                alert('Błąd: ' + (data.error || 'Wystąpił nieznany błąd'));
+            }
+        })
+        .catch(error => {
+            console.error('Błąd podczas weryfikacji:', error);
+            alert('Wystąpił błąd podczas rozpoczynania weryfikacji');
+        });
+    } else {
+        console.log('Użytkownik anulował weryfikację');
+    }
+}
+</script>
+
+<!-- JavaScript dla obsługi akcji masowych -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Obsługa zaznaczania wszystkich checkboxów
+    const checkboxAll = document.getElementById('checkbox-all');
+    const itemCheckboxes = document.querySelectorAll('input[id^="checkbox-"]:not(#checkbox-all)');
+    
+    checkboxAll.addEventListener('change', function() {
+        const isChecked = this.checked;
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = isChecked;
+        });
+    });
+    
+    // Obsługa przycisku "Oznacz jako przetworzone"
+    const markProcessedButton = document.getElementById('mark-processed');
+    markProcessedButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Pobierz wszystkie zaznaczone dostawy
+        const selectedCheckboxes = document.querySelectorAll('input[id^="checkbox-"]:not(#checkbox-all):checked');
+        const id_deliveries = Array.from(selectedCheckboxes).map(checkbox => {
+            return checkbox.id.replace('checkbox-', '');
+        });
+        
+        if (id_deliveries.length === 0) {
+            alert('Nie wybrano żadnych dostaw');
+            return;
+        }
+        
+        // Potwierdzenie akcji
+        if (confirm(`Czy na pewno chcesz oznaczyć ${id_deliveries.length} dostaw jako przetworzone?`)) {
+            // Wyślij żądanie do API
+            fetch('/staff/process-deliveries', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id_deliveries: id_deliveries })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    // Odśwież stronę po udanej operacji
+                    window.location.reload();
+                } else {
+                    alert('Błąd: ' + (data.message || 'Wystąpił nieznany błąd'));
+                }
+            })
+            .catch(error => {
+                console.error('Błąd podczas przetwarzania dostaw:', error);
+                alert('Wystąpił błąd podczas przetwarzania dostaw');
+            });
+        }
+    });
+    
+    // Obsługa przycisku "Eksportuj do Excel"
+    const exportExcelButton = document.getElementById('export-excel');
+    exportExcelButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Pobierz wszystkie zaznaczone dostawy
+        const selectedCheckboxes = document.querySelectorAll('input[id^="checkbox-"]:not(#checkbox-all):checked');
+        const id_deliveries = Array.from(selectedCheckboxes).map(checkbox => {
+            return checkbox.id.replace('checkbox-', '');
+        });
+        
+        if (id_deliveries.length === 0) {
+            alert('Nie wybrano żadnych dostaw do eksportu');
+            return;
+        }
+        
+        // Przekieruj do endpointu eksportu
+        window.location.href = `/staff/export-deliveries-excel?ids=${id_deliveries.join(',')}`;
+    });
+});
 </script>
 {% endblock %} 

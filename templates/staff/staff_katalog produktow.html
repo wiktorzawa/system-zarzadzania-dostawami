@@ -1,0 +1,425 @@
+{% extends "staff/staff_base.html" %}
+{% block title %}Katalog Produktów{% endblock %}
+
+{% block staff_content %}
+
+<section class="bg-gray-50 dark:bg-gray-900 py-3 sm:py-5">
+    <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+        <!-- Start coding here -->
+        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4 border-b dark:border-gray-700">
+                <div class="w-full flex items-center space-x-3">
+                    <h5 class="dark:text-white font-semibold">Katalog Produktów</h5>
+                    <div class="text-gray-400 font-medium">Wyniki</div>
+                    <div data-tooltip-target="results-tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" viewbox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">Więcej informacji</span>
+                    </div>
+                    <div id="results-tooltip" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700">
+                        Wyświetlanie wyników
+                        <div class="tooltip-arrow" data-popper-arrow=""></div>
+                    </div>
+                </div>
+                <div class="w-full flex flex-row items-center justify-end space-x-3">
+                    <button type="button" class="w-full md:w-auto flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-3 py-2 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800">
+                        <svg class="h-3.5 w-3.5 mr-2" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
+                        </svg>
+                        Dodaj nowy produkt
+                    </button>
+                    <button type="button" class="w-full md:w-auto flex items-center justify-center py-2 px-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        <svg class="mr-2 w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" viewbox="0 0 12 13" aria-hidden="true">
+                            <path d="M1 2V1h10v3H1V2Zm0 4h5v6H1V6Zm8 0h2v6H9V6Z" />
+                        </svg>
+                        Zarządzaj kolumnami
+                    </button>
+                </div>
+            </div>
+            <div class="flex flex-col-reverse md:flex-row items-start md:items-center justify-between md:space-x-4 p-4 border-b dark:border-gray-700">
+                <div class="mt-3 md:mt-0">
+                    <button id="actionsDropdownButton" data-dropdown-toggle="actionsDropdown" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700" type="button">
+                        <svg class="-ml-1 mr-1.5 w-5 h-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path clip-rule="evenodd" fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                        </svg>
+                        Akcje
+                    </button>
+                    <div id="actionsDropdown" class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600">
+                        <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="actionsDropdownButton">
+                            <li>
+                                <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Masowa edycja</a>
+                            </li>
+                        </ul>
+                        <div class="py-1">
+                            <a href="#" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Usuń wszystkie</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 w-full lg:w-2/3 md:gap-4">
+                    <div class="w-full"><label for="brand" class="sr-only">Marka</label><select id="brand" class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"><option selected="">Marka</option></select></div>
+                    <div class="w-full"><label for="price" class="sr-only">Cena</label><select id="price" class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"><option selected="">Cena</option></select></div>
+                    <div class="w-full"><label for="category" class="sr-only">Kategoria</label><select id="category" class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"><option selected="">Kategoria</option></select></div>
+                    <div class="w-full"><label for="ean" class="sr-only">Kod EAN</label><select id="ean" class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"><option selected="">Kod EAN</option></select></div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table id="product-table" class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col" class="p-4">
+                                <div class="flex items-center">
+                                    <input id="checkbox-all" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 rounded border-gray-300 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                    <label for="checkbox-all" class="sr-only">checkbox</label>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-4 py-3">
+                                <span class="sr-only">Expand/Collapse Row</span>
+                            </th>
+                            <th scope="col" class="px-4 py-3 min-w-[6rem]">
+                                Zdjęcie
+                            </th>
+                            <th scope="col" class="px-4 py-3 min-w-[14rem]" data-sortable="true">Nazwa produktu</th>
+                            <th scope="col" class="px-4 py-3 min-w-[6rem]" data-sortable="true">
+                                Kod ASIN
+                                <svg class="h-4 w-4 ml-1 inline-block" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" />
+                                </svg>
+                            </th>
+                            <th scope="col" class="px-4 py-3 min-w-[6rem]" data-sortable="true">
+                                Kod EAN
+                                <svg class="h-4 w-4 ml-1 inline-block" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" />
+                                </svg>
+                            </th>
+                            <th scope="col" class="px-4 py-3 min-w-[6rem]" data-sortable="true">
+                                Cena rynkowa
+                                <svg class="h-4 w-4 ml-1 inline-block" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" />
+                                </svg>
+                            </th>
+                            <th scope="col" class="px-4 py-3 min-w-[9rem]" data-sortable="true">
+                                Data sprawdzenia ceny
+                                <svg class="h-4 w-4 ml-1 inline-block" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" />
+                                </svg>
+                            </th>
+                            <th scope="col" class="px-4 py-3 min-w-[10rem]" data-sortable="true">
+                                Utworzono przez
+                                <svg class="h-4 w-4 ml-1 inline-block" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" />
+                                </svg>
+                            </th>
+                            <th scope="col" class="px-4 py-3 min-w-[10rem]" data-sortable="true">
+                                Data utworzenia
+                                <svg class="h-4 w-4 ml-1 inline-block" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" />
+                                </svg>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody data-accordion="table-column">
+                        <!-- Dane będą wstawiane dynamicznie z bazy danych -->
+                        
+                        <tr class="border-b dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition" id="table-column-header-1" data-accordion-target="#table-column-body-1" aria-expanded="false" aria-controls="table-column-body-1">
+                            <td class="px-4 py-3 w-4">
+                                <div class="flex items-center">
+                                    <input id="checkbox-product-1" type="checkbox" onclick="event.stopPropagation()" class="w-4 h-4 text-primary-600 bg-gray-100 rounded border-gray-300 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                    <label for="checkbox-product-1" class="sr-only">checkbox</label>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <button data-accordion-target="#table-column-body-1" aria-expanded="false" aria-controls="table-column-body-1" type="button">
+                                    <svg data-accordion-icon class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="w-16 h-16 flex-shrink-0">
+                                    <img src="{{ url_for('static', filename='img/product-placeholder.jpg') }}" class="w-full h-full object-cover rounded" alt="Zdjęcie produktu">
+                                </div>
+                            </td>
+                            <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                Smartphone X-Pro 8 128GB
+                            </th>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                B07X123456
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                1234567890123
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                2599,99 zł
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                2023-08-15
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                admin
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                2023-08-01
+                            </td>
+                        </tr>
+                        <tr class="hidden flex-1 overflow-x-auto w-full" id="table-column-body-1" aria-labelledby="table-column-header-1">
+                            <td class="p-4" colspan="10">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <h6 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Opis</h6>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Najnowszy flagowy smartfon z ekranem 6,7 cala, procesorem octa-core, 8GB RAM i 128GB pamięci wewnętrznej.</p>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Kategoria</h6>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Elektronika / Smartfony</p>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">URL źródłowy</h6>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">https://przyklad.com/smartfony/x-pro-8</p>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Akcje</h6>
+                                        <div class="flex items-center space-x-2">
+                                            <button type="button" class="py-1 px-2 text-xs font-medium text-center text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Edytuj</button>
+                                            <button type="button" class="py-1 px-2 text-xs font-medium text-center text-white bg-red-700 rounded-lg hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800">Usuń</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr class="border-b dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition" id="table-column-header-2" data-accordion-target="#table-column-body-2" aria-expanded="false" aria-controls="table-column-body-2">
+                            <td class="px-4 py-3 w-4">
+                                <div class="flex items-center">
+                                    <input id="checkbox-product-2" type="checkbox" onclick="event.stopPropagation()" class="w-4 h-4 text-primary-600 bg-gray-100 rounded border-gray-300 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                    <label for="checkbox-product-2" class="sr-only">checkbox</label>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <button data-accordion-target="#table-column-body-2" aria-expanded="false" aria-controls="table-column-body-2" type="button">
+                                    <svg data-accordion-icon class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="w-16 h-16 flex-shrink-0">
+                                    <img src="{{ url_for('static', filename='img/product-placeholder.jpg') }}" class="w-full h-full object-cover rounded" alt="Zdjęcie produktu">
+                                </div>
+                            </td>
+                            <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                Laptop UltraBook 15"
+                            </th>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                B09Y654321
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                9876543210987
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                4999,00 zł
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                2023-09-20
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                operator1
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                2023-09-10
+                            </td>
+                        </tr>
+                        <tr class="hidden flex-1 overflow-x-auto w-full" id="table-column-body-2" aria-labelledby="table-column-header-2">
+                            <td class="p-4" colspan="10">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <h6 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Opis</h6>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Ultrasmukły laptop biznesowy z ekranem 15", procesorem Intel i7, 16GB RAM, dyskiem SSD 512GB i kartą graficzną GeForce MX450.</p>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Kategoria</h6>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Elektronika / Laptopy</p>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">URL źródłowy</h6>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">https://przyklad.com/laptopy/ultrabook-15</p>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Akcje</h6>
+                                        <div class="flex items-center space-x-2">
+                                            <button type="button" class="py-1 px-2 text-xs font-medium text-center text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Edytuj</button>
+                                            <button type="button" class="py-1 px-2 text-xs font-medium text-center text-white bg-red-700 rounded-lg hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800">Usuń</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 px-4 pt-3 pb-4" aria-label="Table navigation">
+                <div class="text-xs flex items-center space-x-5">
+                    <div>
+                        <div class="text-gray-500 dark:text-gray-400 mb-1">Liczba produktów</div>
+                        <div class="dark:text-white font-medium">0</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500 dark:text-gray-400 mb-1">Średnia cena</div>
+                        <div class="dark:text-white font-medium">0 zł</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button type="button" class="py-1.5 flex items-center text-sm font-medium text-center text-primary-700 rounded-lg hover:text-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 dark:text-primary-500 dark:hover:text-primary-600 dark:focus:ring-primary-800">Drukuj kody</button>
+                    <button type="button" class="py-1.5 flex items-center text-sm font-medium text-center text-primary-700 rounded-lg hover:text-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 dark:text-primary-500 dark:hover:text-primary-600 dark:focus:ring-primary-800">Duplikuj</button>
+                    <button type="button" class="py-2 px-3 flex items-center text-xs font-medium text-center text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Eksport CSV</button>
+                </div>
+            </div>
+        </div>
+    </div>
+  </section>
+
+<!-- Style dla sortowania -->
+<style>
+    /* Style dla sortowania */
+    #product-table th.sortable {
+        cursor: pointer;
+        position: relative;
+    }
+    
+    #product-table th.sortable:hover {
+        background-color: rgba(0,0,0,0.05);
+    }
+    
+    #product-table th.asc .sort-icon:after {
+        content: '↑';
+    }
+    
+    #product-table th.desc .sort-icon:after {
+        content: '↓';
+    }
+    
+    /* Animacja podczas sortowania */
+    #product-table.sorting tbody {
+        opacity: 0.5;
+        transition: opacity 0.3s ease;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Własna implementacja sortowania tabeli bez użycia biblioteki DataTable
+        const table = document.getElementById('product-table');
+        if (table) {
+            // Dodanie obsługi kliknięć na nagłówki tabeli dla sortowania
+            const headers = table.querySelectorAll('th[data-sortable="true"]');
+            
+            headers.forEach(header => {
+                header.addEventListener('click', function() {
+                    const columnIndex = Array.from(header.parentNode.children).indexOf(header);
+                    const currentIsAscending = header.classList.contains('asc');
+                    
+                    // Usunięcie klas sortowania ze wszystkich nagłówków
+                    headers.forEach(h => {
+                        h.classList.remove('asc', 'desc');
+                        const existingIcons = h.querySelectorAll('.sort-icon');
+                        existingIcons.forEach(icon => icon.remove());
+                    });
+                    
+                    // Dodanie odpowiedniej klasy sortowania
+                    header.classList.add(currentIsAscending ? 'desc' : 'asc');
+                    
+                    // Dodanie ikony sortowania
+                    const sortIcon = document.createElement('span');
+                    sortIcon.className = 'sort-icon ml-1';
+                    header.appendChild(sortIcon);
+                    
+                    // Sortowanie tabeli
+                    sortTable(table, columnIndex, !currentIsAscending);
+                });
+                
+                // Dodanie kursora pointer do nagłówków sortowanych
+                header.classList.add('cursor-pointer');
+            });
+            
+            // Funkcja do sortowania tabeli
+            function sortTable(table, columnIndex, asc) {
+                const tableBody = table.querySelector('tbody');
+                
+                // Pobierz wszystkie główne wiersze (nie ukryte wiersze rozwinięcia)
+                const mainRows = Array.from(tableBody.querySelectorAll('tr[id^="table-column-header-"]'));
+                
+                // Znajdź i zapamiętaj połączenia między wierszami głównymi i rozwijanymi
+                const rowPairs = {};
+                mainRows.forEach(row => {
+                    const rowId = row.id;
+                    const targetId = row.getAttribute('data-accordion-target').substring(1); // usuń #
+                    const detailRow = document.getElementById(targetId);
+                    if (detailRow) {
+                        rowPairs[rowId] = detailRow;
+                    }
+                });
+                
+                // Dodanie klasy do tabeli podczas sortowania
+                table.classList.add('sorting');
+                
+                // Sortowanie głównych wierszy
+                const sortedRows = mainRows.sort((a, b) => {
+                    // Pobierz komórki do porównania
+                    let aCell, bCell;
+                    
+                    if (columnIndex === 3) { // Kolumna "Nazwa produktu" jest TH, nie TD (indeks 3 po dodaniu kolumny ze zdjęciem)
+                        aCell = a.querySelector('th');
+                        bCell = b.querySelector('th');
+                    } else {
+                        aCell = a.querySelectorAll('td')[columnIndex];
+                        bCell = b.querySelectorAll('td')[columnIndex];
+                    }
+                    
+                    // Jeśli komórka jest TH (np. nazwa produktu), pobierz tekst z uwzględnieniem możliwych elementów potomnych
+                    let aColText = aCell.textContent.trim();
+                    let bColText = bCell.textContent.trim();
+                    
+                    // Próba konwersji na liczby jeśli możliwe (najpierw usuń znaki walut jak $)
+                    let aValue = aColText.replace(/[$,]/g, '');
+                    let bValue = bColText.replace(/[$,]/g, '');
+                    
+                    aValue = isNaN(parseFloat(aValue)) ? aColText : parseFloat(aValue);
+                    bValue = isNaN(parseFloat(bValue)) ? bColText : parseFloat(bValue);
+                    
+                    if (aValue < bValue) {
+                        return asc ? -1 : 1;
+                    }
+                    if (aValue > bValue) {
+                        return asc ? 1 : -1;
+                    }
+                    return 0;
+                });
+                
+                // Usuń wszystkie wiersze z tabeli
+                while (tableBody.firstChild) {
+                    tableBody.removeChild(tableBody.firstChild);
+                }
+                
+                // Dodaj posortowane wiersze główne oraz ich odpowiednie wiersze rozwinięcia
+                sortedRows.forEach(row => {
+                    tableBody.appendChild(row); // Dodaj wiersz główny
+                    
+                    // Dodaj odpowiedni wiersz rozwinięcia jeśli istnieje
+                    const detailRow = rowPairs[row.id];
+                    if (detailRow) {
+                        tableBody.appendChild(detailRow);
+                    }
+                });
+                
+                // Usuń klasę sortowania
+                setTimeout(() => {
+                    table.classList.remove('sorting');
+                }, 300);
+            }
+        }
+    });
+</script>
+{% endblock staff_content %}
+  
+  

@@ -220,24 +220,20 @@ def create_app(config_name='default'):
     
     # Rejestracja blueprintów
     from routes.MAIN.routes import main_bp
+    from routes.admin.routes import admin_bp
+    from routes.staff.routes import staff_bp
+    from routes.supplier.routes import supplier_bp
+    
+    # Main blueprint
     app.register_blueprint(main_bp)
     
-    try:
-        from routes.admin.routes import admin_bp
-        app.register_blueprint(admin_bp, url_prefix='/admin')
-    except ImportError:
-        pass
-        
-    try:
-        from routes.staff.routes import staff_bp
-        app.register_blueprint(staff_bp, url_prefix='/staff')
-    except ImportError:
-        pass
-        
-    try:
-        from routes.supplier.routes import supplier_bp
-        app.register_blueprint(supplier_bp, url_prefix='/supplier')
-    except ImportError:
-        pass
+    # Admin blueprint
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+    
+    # Staff blueprint
+    app.register_blueprint(staff_bp, url_prefix='/staff')
+    
+    # Supplier blueprint
+    app.register_blueprint(supplier_bp, url_prefix='/supplier')
     
     return app 

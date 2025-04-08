@@ -1,0 +1,123 @@
+{% extends "staff/staff_base.html" %}
+
+{% block title %}Dostawy w trakcie weryfikacji{% endblock %}
+
+{% block staff_content %}
+<section class="bg-gray-50 dark:bg-gray-900 py-3 sm:py-5">
+  <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden p-4">
+          <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4 border-b dark:border-gray-700">
+              <div class="w-full flex items-center space-x-3">
+                  <h5 class="dark:text-white font-semibold text-xl">Dostawy w trakcie weryfikacji</h5>
+                  <div class="text-gray-400 font-medium">{{ delivery_data|length }}</div>
+              </div>
+          </div>
+          
+          {% if delivery_data %}
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+              {% for data in delivery_data %}
+              <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <!-- Nagłówek karty -->
+                  <div class="p-4 bg-blue-50 dark:bg-blue-900 border-b border-gray-200 dark:border-gray-700">
+                      <div class="flex justify-between items-center">
+                          <h6 class="text-lg font-bold text-blue-800 dark:text-blue-300">
+                              Dostawa #{{ data.delivery.id_delivery }}
+                          </h6>
+                          <span class="text-sm font-medium px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                              {{ data.stats.progress|round|int }}% ukończono
+                          </span>
+                      </div>
+                  </div>
+                  
+                  <!-- Zawartość karty -->
+                  <div class="p-4">
+                      <!-- Podstawowe informacje -->
+                      <div class="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                              <h6 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Informacje o dostawie</h6>
+                              <ul class="space-y-1 text-sm">
+                                  <li class="flex justify-between">
+                                      <span class="text-gray-500 dark:text-gray-400">Data:</span>
+                                      <span class="font-medium text-gray-900 dark:text-white">{{ data.delivery.delivery_date.strftime('%d-%m-%Y') }}</span>
+                                  </li>
+                                  <li class="flex justify-between">
+                                      <span class="text-gray-500 dark:text-gray-400">Dostawca:</span>
+                                      <span class="font-medium text-gray-900 dark:text-white">{{ data.supplier.company_name if data.supplier else 'Nieznany' }}</span>
+                                  </li>
+                                  <li class="flex justify-between">
+                                      <span class="text-gray-500 dark:text-gray-400">LOT:</span>
+                                      <span class="font-medium text-gray-900 dark:text-white">{{ data.delivery.lot_number }}</span>
+                                  </li>
+                                  <li class="flex justify-between">
+                                      <span class="text-gray-500 dark:text-gray-400">Kategoria:</span>
+                                      <span class="font-medium text-gray-900 dark:text-white">{{ data.delivery.delivery_category }}</span>
+                                  </li>
+                              </ul>
+                          </div>
+                          <div>
+                              <h6 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Statystyki weryfikacji</h6>
+                              <ul class="space-y-1 text-sm">
+                                  <li class="flex justify-between">
+                                      <span class="text-gray-500 dark:text-gray-400">Produkty:</span>
+                                      <span class="font-medium text-gray-900 dark:text-white">{{ data.stats.total }}</span>
+                                  </li>
+                                  <li class="flex justify-between">
+                                      <span class="text-gray-500 dark:text-gray-400">Zweryfikowane:</span>
+                                      <span class="font-medium text-green-600 dark:text-green-400">{{ data.stats.verified }}</span>
+                                  </li>
+                                  <li class="flex justify-between">
+                                      <span class="text-gray-500 dark:text-gray-400">Odrzucone:</span>
+                                      <span class="font-medium text-red-600 dark:text-red-400">{{ data.stats.rejected }}</span>
+                                  </li>
+                                  <li class="flex justify-between">
+                                      <span class="text-gray-500 dark:text-gray-400">Oczekujące:</span>
+                                      <span class="font-medium text-yellow-600 dark:text-yellow-400">{{ data.stats.pending }}</span>
+                                  </li>
+                              </ul>
+                          </div>
+                      </div>
+                      
+                      <!-- Pasek postępu -->
+                      <div class="mb-4">
+                          <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                              <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ data.stats.progress }}%"></div>
+                          </div>
+                          <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              <span>0%</span>
+                              <span>Zweryfikowano: {{ data.stats.verified }}/{{ data.stats.total }}</span>
+                              <span>100%</span>
+                          </div>
+                      </div>
+                      
+                      <!-- Przyciski funkcyjne -->
+                      <div class="flex space-x-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <a href="{{ url_for('staff.verify_delivery', id_delivery=data.delivery.id_delivery) }}"
+                             class="flex-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                              <i class="fas fa-check mr-2"></i> Weryfikuj produkty
+                          </a>
+                          <button type="button"
+                                  class="flex-1 text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-lg text-sm px-4 py-2.5 text-center dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                              <i class="fas fa-file-export mr-2"></i> Eksportuj raport
+                          </button>
+                      </div>
+                  </div>
+              </div>
+              {% endfor %}
+          </div>
+          {% else %}
+          <div class="flex items-center justify-center h-64">
+              <div class="text-center">
+                  <div class="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-900 dark:text-blue-300">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                  </div>
+                  <h5 class="text-xl font-bold text-gray-900 dark:text-white mb-1">Brak dostaw w trakcie weryfikacji</h5>
+                  <p class="text-gray-500 dark:text-gray-400">Aktualnie nie ma żadnych dostaw oczekujących na weryfikację.</p>
+              </div>
+          </div>
+          {% endif %}
+      </div>
+  </div>
+</section>
+{% endblock %} 
